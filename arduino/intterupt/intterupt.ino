@@ -36,7 +36,7 @@ long debounceDelay = 200;    // the debounce time; increase if the output flicke
 long displayUpdateTime = 0;
 long displayDelay = 300;
 
-boolean stateChange;
+volatile boolean stateChange;
 
 byte  data[3];
 byte  address;
@@ -68,7 +68,7 @@ void setPixelColor(byte r, byte g, byte b)
 void setup() {
   //setup Input pin and Interrupt 
   pinMode(PinINPUT0,INPUT_PULLUP);
-  PCintPort::attachInterrupt(PinINPUT0, change,CHANGE); // attach a PinChange Interrupt to our pin on the rising edge
+  PCintPort::attachInterrupt(PinINPUT0, change, CHANGE); // attach a PinChange Interrupt to our pin CHANGE means any level change triggers an interrupt 
   
   stateChange = false;
   stateDisplay = notHR;
@@ -104,6 +104,7 @@ void setup() {
 
 void display_loop() {
   
+  /* mg
   //display state machine
   //in hr
   if (stateDisplay == HR) 
@@ -121,6 +122,7 @@ void display_loop() {
     //digitalWrite(PinLED,LOW);
     setPixelColor(0,0,0);
   //in not hr 
+  */
 }
 
 void readLoop() {
@@ -129,7 +131,7 @@ void readLoop() {
     byte_receive=Serial.read();
     
     if (byte_receive==00){
-      digitalWrite(PinLED,!digitalRead(PinLED));
+     //mg digitalWrite(PinLED,!digitalRead(PinLED));
       state=1;
       checksum_trace=0;
       checksum=0;
@@ -181,24 +183,31 @@ void loop() {
   //display_loop();
   
   //send and received data
-  if (stateChange) {
+  //mg if (stateChange) {
     //sendBeat
     //Serial.println("Change");
-    stateChange = false;
-    sendMSG(48,toID+48,'P');
-  } else {
-    readLoop();
-  }
+    //mg stateChange = false;
+    //mg sendMSG(48,toID+48,'P');
+  // mg } else {
+    // mg readLoop();
+  // mg }
+  
+  
+ debugLED(stateChange);
 }
 
 void change(){
   //long now = millis();
   //if ((now - lastDebounceTime) > debounceDelay) {
-    stateChange = true;
+    //mg stateChange = true;
     //stateDisplay = HR;
   //  lastDebounceTime = now;
     
  // }
+ 
+ //mg test code
+ stateChange = !stateChange;
+ 
 }
 
 void sendMSG(byte address1,byte address2,byte data){
@@ -235,4 +244,8 @@ void sendData(byte type, byte address1,byte address2,byte data){
 
   digitalWrite(RS485Control, RS485Receive);  // Disable RS485 Transmit
   //digitalWrite(PinLED,LOW);  // Disable RS485 Transmit    
+}
+
+void debugLED(boolean on) {
+    digitalWrite(PinLED,on?HIGH:LOW);  
 }
