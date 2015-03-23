@@ -38,7 +38,7 @@ long displayDelay = 300;
 
 volatile boolean stateChange;
 
-byte  data[3];
+byte  data[13];
 byte  address;
 byte  myID;
 byte  toID;
@@ -149,12 +149,12 @@ void setPixelColor(byte r, byte g, byte b)
 
 //---------------- Comms Rx methods
 void readLoop() {
-  while (Serial.available() > 0){
-    debugCommsRx(true);
+  while (Serial.available() > 0) {
+  
+   // debugCommsRx(true);
     byte_receive=Serial.read();
-
-    if (byte_receive==00){
-     //mg digitalWrite(PinLED,!digitalRead(PinLED));
+    
+    if (byte_receive==00) {
       state=1;
       checksum_trace=0;
       checksum=0;
@@ -162,40 +162,46 @@ void readLoop() {
       address=0;
       data_received=0;
       cont1=1;
-    } else if (state==1 && cont1<=4){
-      data[cont1-1]=byte_receive;
+    } else if (state==1 && cont1<=4) {
+      data[cont1-1]=byte_receive; // evil line
       checksum=checksum+byte_receive;
       cont1=cont1+1;
 //   Needed if data was longer
-//    } else if (state==1 && cont1==4){
+//    } else if (state==1 && cont1==4) {
 //      checksum_trace=byte_receive<<8;
 //      cont1=cont1+1;
-    } else if (state==1 && cont1==5){
+    } else if (state==1 && cont1==5) {
       checksum_trace=checksum_trace+byte_receive;
       cont1=cont1+1;
       state=0;
-      if (checksum_trace==checksum){
+      
+      if (checksum_trace==checksum) {
         trace_OK=1;
-        if (data[0] == 49)
+        if (data[0] == 49) {
           address=10+hex2num(data[1]);
-        else
+        } else {
           address=hex2num(data[1]);
-        if (address==myID){
-          if (data[2] == 'P'){
+        }
+        if (address==myID) {
+          if (data[2] == 'P') {
             stateDisplay = HR;
             lastMessageTime = millis();
             //sendMSG(49,toID+48,'D');
 
-          } else
+          } else {
           //sendMSG(48,toID+48,'M');
           delay(1);
-        } else
+          }
+        } else {
           //sendMSG(48,toID+48,'N');
           delay(1);
+        }
       }
-    }
+      
+    } //else if state 1 count 5
+         
     debugCommsRx(false);
-  }
+  } // while
 }
 
 //--------------- Comms TX methods
@@ -244,7 +250,7 @@ void debugCommsTx(boolean on) {
 }
 
 void debugCommsRx(boolean on) {
-    digitalWrite(PinLED,on?HIGH:LOW);
+    //digitalWrite(PinLED,on?HIGH:LOW);
 }
 
 void debugVisuals(boolean on) {
