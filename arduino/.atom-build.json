@@ -3,5 +3,5 @@
   "args": [ "{FILE_ACTIVE}", "--verify"],
   "sh": true,
   "cwd": "",
-  "errorMatch": "^(?<file>[^.]+.ino):(?<line>\\d+):(?<col>\\d+)"
+  "errorMatch": "^(?<file>[^\\.]+.ino):(?<line>\\d+):(?<col>\\d+)"
 }
