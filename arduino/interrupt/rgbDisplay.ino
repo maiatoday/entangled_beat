@@ -1,16 +1,9 @@
-byte hex2num(byte x){
-
-  byte result;
-
-  if (x>=48 && x<=57){
-    result=x-48;  
-  }
-  else if (x>=65 && x<=70){
-    result=x-55;    
-  }
-  return result;  
+void setPixelColor(byte r, byte g, byte b)
+{
+  analogWrite(ledR, r);
+  analogWrite(ledG, g);
+  analogWrite(ledB, b);
 }
-
 
 
 //Input a value 0 to 255 to get a color value.
