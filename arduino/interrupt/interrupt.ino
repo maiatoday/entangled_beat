@@ -1,6 +1,6 @@
 #include <PinChangeInt.h>
 
-#define RS485Control     17   //RS485 Direction control
+#define RS485Control     17 // RS485 Direction control
 
 #define RS485Transmit    HIGH
 #define RS485Receive     LOW
@@ -30,18 +30,19 @@
 
 #define mybaud           9600
 
-byte  myID;
-byte  toID;
+byte myID;
+byte toID;
 
-long lastDebounceTime = 0;  // the last time the output pin was toggled
-long debounceDelay = 200;    // the debounce time; increase if the output flickers
+long lastDebounceTime = 0;   // the last time the output pin was toggled
+long debounceDelay    = 200; // the debounce time; increase if the output
+                             // flickers
 
-long lastMessageTime = 0; // last time an incoming message was received
-long displayDelay = 300;
+long lastMessageTime = 0;    // last time an incoming message was received
+long displayDelay    = 300;
 
 volatile boolean stateChange;
 
-//************ display variables
+// ************ display variables
 enum stateDisplayType {
   notHR,
   HR
@@ -50,22 +51,27 @@ enum stateDisplayType {
 stateDisplayType stateDisplay;
 
 void setup() {
-  //setup Input pin and Interrupt
+  // setup Input pin and Interrupt
   pinMode(PinINPUT0, INPUT_PULLUP);
-  PCintPort::attachInterrupt(PinINPUT0, pulseISR, CHANGE); // attach a PinChange Interrupt to our pin CHANGE means any level change triggers an interrupt
+  PCintPort::attachInterrupt(PinINPUT0, pulseISR, CHANGE); // attach a PinChange
+                                                           // Interrupt to our
+                                                           // pin CHANGE means
+                                                           // any level change
+                                                           // triggers an
+                                                           // interrupt
 
-  stateChange = false;
+  stateChange  = false;
   stateDisplay = notHR;
 
-  pinMode(PinLED, OUTPUT);
+  pinMode(PinLED,       OUTPUT);
   pinMode(RS485Control, OUTPUT);
   digitalWrite(RS485Control, RS485Receive);
 
   Serial.begin(mybaud);
 
-  pinMode(ledB, OUTPUT);
-  pinMode(ledR, OUTPUT);
-  pinMode(ledG, OUTPUT);
+  pinMode(ledB,     OUTPUT);
+  pinMode(ledR,     OUTPUT);
+  pinMode(ledG,     OUTPUT);
 
   pinMode(PinADDR0, INPUT_PULLUP);
   pinMode(PinADDR1, INPUT_PULLUP);
@@ -81,7 +87,7 @@ void setup() {
   toID = toID + 2 * !digitalRead(PinADDR3);
 }
 
-//---------- main loop
+// ---------- main loop
 void loop() {
   checkSend();
   readLoop();
@@ -101,38 +107,39 @@ void pulseISR() {
   stateChange = true;
 }
 
-//--------------- Visual Methods
+// --------------- Visual Methods
 void changeVisuals() {
-  //Check if HR received in last 4 beats
+  // Check if HR received in last 4 beats
   if ((millis() - lastMessageTime) > 4 * debounceDelay) {
     stateDisplay = notHR;
   } else {
     debugVisuals(true);
     stateDisplay = HR;
+
     /* mg
-    //display state machine
-    //in hr
-    if (stateDisplay == HR)
-      if (stateChange){
+       //display state machine
+       //in hr
+       if (stateDisplay == HR)
+       if (stateChange){
         //digitalWrite(PinLED,HIGH);
         setPixelColor(255,255,255);
          = millis();
-      } else {
+       } else {
         if ((millis() - ) > displayDelay) {
           //digitalWrite(PinLED,LOW);
           setPixelColor(0,0,0);
         }
-      }
-    else
-      //digitalWrite(PinLED,LOW);
-      setPixelColor(0,0,0);
-    //in not hr
-    */
+       }
+       else
+       //digitalWrite(PinLED,LOW);
+       setPixelColor(0,0,0);
+       //in not hr
+     */
     debugVisuals(false);
   }
 }
 
-//-------------- Debug methods
+// -------------- Debug methods
 void debugPulse(boolean on) {
   //  digitalWrite(PinLED,on?HIGH:LOW);
 }
@@ -142,7 +149,7 @@ void debugCommsTx(boolean on) {
 }
 
 void debugCommsRx(boolean on) {
-  //digitalWrite(PinLED,on?HIGH:LOW);
+  // digitalWrite(PinLED,on?HIGH:LOW);
 }
 
 void debugVisuals(boolean on) {
