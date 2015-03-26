@@ -13,17 +13,17 @@ byte  state = 0;
 byte  dataIndex = 0;
 unsigned int checksum;
 
-byte hex2addr(byte x){
+byte hex2addr(byte x) {
 
   byte result;
 
-  if (x>=48 && x<=57){
-    result=x-48;  
+  if (x >= 48 && x <= 57) {
+    result = x - 48;
   }
-  else if (x>=65 && x<=70){
-    result=x-55;    
+  else if (x >= 65 && x <= 70) {
+    result = x - 55;
   }
-  return result;  
+  return result;
 }
 
 byte addr2hex(byte x) {
