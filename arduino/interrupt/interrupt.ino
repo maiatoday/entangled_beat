@@ -145,11 +145,11 @@ void debugPulse(boolean on) {
 }
 
 void debugCommsTx(boolean on) {
-  digitalWrite(PinLED, on ? HIGH : LOW);
+  // digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
 void debugCommsRx(boolean on) {
-  // digitalWrite(PinLED,on?HIGH:LOW);
+  digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
 void debugVisuals(boolean on) {

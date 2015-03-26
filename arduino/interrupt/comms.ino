@@ -82,11 +82,14 @@ void readLoop() {
       checksum        = 0;
       address         = 0;
       data_received   = 0;
-      dataIndex       = 0;
       data[dataIndex] = byte_receive; // we don't really need this
+      dataIndex++;
     } else if ((state == 1) && (dataIndex < MAX_PACKET_LENGTH)) {
       data[dataIndex] = byte_receive;
-      checksum        = checksum + byte_receive;
+
+      if (dataIndex < IDX_CHECKSUM) {
+        checksum = checksum + byte_receive;
+      }
       dataIndex++;
 
       if (dataIndex == MAX_PACKET_LENGTH) {
@@ -109,7 +112,7 @@ void readLoop() {
               // if necessary send an ack here
           }   // packet is for me
         }     // checksum ok
-      }       // end of packet
-    }         // not start byte
-  }           // while
+      } // end of packet
+    }   // not start byte
+  }     // while
 }

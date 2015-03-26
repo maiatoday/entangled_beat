@@ -1,6 +1,6 @@
 {
   "cmd": "arduino",
-  "args": [ "{FILE_ACTIVE}", "--verify"],
+  "args": [ "{FILE_ACTIVE}", "--upload"],
   "sh": true,
   "cwd": "",
   "errorMatch": "^(?<file>[^\\.]+.ino):(?<line>\\d+):(?<col>\\d+)"
