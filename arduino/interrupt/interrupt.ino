@@ -36,19 +36,9 @@ byte toID;
 long lastDebounceTime = 0;   // the last time the output pin was toggled
 long debounceDelay    = 200; // the debounce time; increase if the output
                              // flickers
-
-long lastMessageTime = 0;    // last time an incoming message was received
 long displayDelay    = 300;
 
 volatile boolean stateChange;
-
-// ************ display variables
-enum stateDisplayType {
-  notHR,
-  HR
-};
-
-stateDisplayType stateDisplay;
 
 void setup() {
   // setup Input pin and Interrupt
@@ -61,7 +51,6 @@ void setup() {
                                                            // interrupt
 
   stateChange  = false;
-  stateDisplay = notHR;
 
   pinMode(PinLED,       OUTPUT);
   pinMode(RS485Control, OUTPUT);
@@ -109,12 +98,13 @@ void pulseISR() {
 
 // --------------- Visual Methods
 void changeVisuals() {
+
+  //debugVisuals(true);
   // Check if HR received in last 4 beats
-  if ((millis() - lastMessageTime) > 4 * debounceDelay) {
-    stateDisplay = notHR;
-  } else {
-    debugVisuals(true);
-    stateDisplay = HR;
+//  if ((millis() - lastMessageTime) > 4 * debounceDelay) {
+//    stateDisplay = notHR;
+//  } else {
+//    stateDisplay = HR;
 
     /* mg
        //display state machine
@@ -135,11 +125,31 @@ void changeVisuals() {
        setPixelColor(0,0,0);
        //in not hr
      */
-    debugVisuals(false);
+    //debugVisuals(false);
+  //}
+}
+
+// -------------- Interval managment methods
+#define  MAX_INTERVALS 5
+long intervals[MAX_INTERVALS];
+int indexInterval = 0;
+long lastInterval = 0;
+
+void rememberInterval(long interval) {
+  debugToggleVisuals();
+  // remember the last MAX_INTERVALS intervals between pulses
+  lastInterval = interval;
+  intervals[indexInterval] = interval;
+  indexInterval++;
+  if (indexInterval == MAX_INTERVALS) {
+    indexInterval = 0;
   }
+
 }
 
 // -------------- Debug methods
+
+bool debugToggle = false;
 void debugPulse(boolean on) {
   //  digitalWrite(PinLED,on?HIGH:LOW);
 }
@@ -149,9 +159,13 @@ void debugCommsTx(boolean on) {
 }
 
 void debugCommsRx(boolean on) {
-  digitalWrite(PinLED, on ? HIGH : LOW);
+  //digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
+void debugToggleVisuals() {
+  debugVisuals(debugToggle);
+  debugToggle = !debugToggle;
+}
 void debugVisuals(boolean on) {
-  //    digitalWrite(PinLED,on?HIGH:LOW);
+  digitalWrite(PinLED,on?HIGH:LOW);
 }
