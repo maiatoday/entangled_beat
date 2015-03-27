@@ -7,20 +7,18 @@
 #define MAX_PACKET_LENGTH  5
 byte data[MAX_PACKET_LENGTH];
 byte address;
-unsigned int data_received;
 byte byte_receive;
-byte state     = 0;
-byte dataIndex = 0;
+bool statePacketStarted = false;
+byte dataIndex          = 0;
 unsigned int checksum;
 
-byte hex2addr(byte x) {
-  byte result;
+#define ADDR_BROADCAST 10
 
-  if ((x >= 48) && (x <= 57)) {
+byte hex2addr(byte x) {
+  byte result = x;
+
+  if (x >= 48) {
     result = x - 48;
-  }
-  else if ((x >= 65) && (x <= 70)) {
-    result = x - 55;
   }
   return result;
 }
@@ -48,20 +46,16 @@ void sendNAK(byte address1, byte address2, byte data) {
 void sendData(byte type, byte address1, byte address2, byte data) {
   unsigned int checksum_ACK;
 
-  checksum_ACK = address1 + address2 + data; // why the +3? and why send the 3
-                                             // in the message
+  checksum_ACK = address1 + address2 + data;
 
   digitalWrite(RS485Control, RS485Transmit); // Enable RS485 Transmit
 
   delay(1);
 
-  Serial.write(0);        // IDX_START_BYTE
-  Serial.write(address1); // IDX_ADDR_SENDER
-  Serial.write(address2); // IDX_ADDR_RECEIVER
-  Serial.write(data);     // IDX_PAYLOAD
-  //  Serial.write(3); // why is this here?
-  //  Needed if data was longer
-  //  Serial.write(((checksum_ACK>>8)&255));
+  Serial.write(0);                          // IDX_START_BYTE
+  Serial.write(address1);                   // IDX_ADDR_SENDER
+  Serial.write(address2);                   // IDX_ADDR_RECEIVER
+  Serial.write(data);                       // IDX_PAYLOAD
   Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
   Serial.flush();
 
@@ -70,32 +64,32 @@ void sendData(byte type, byte address1, byte address2, byte data) {
 
 // ---------------- Comms Rx methods
 void readLoop() {
-  // The message consists of 5 bytes
-  // 00 senderAddr receiverAddr payload checksum
+  // fixed length packets as defined at the top of the file.
   while (Serial.available() > 0) {
     byte_receive = Serial.read();
 
     if (byte_receive == 00) {
-      // 00 is a start of message so start collecting the rest
+      // 00 is a start of message so start collecting
           debugCommsRx(true);
-      state           = 1;
-      checksum        = 0;
-      address         = 0;
-      data_received   = 0;
-      data[dataIndex] = byte_receive; // we don't really need this
+      statePacketStarted = true;
+      checksum           = 0;
+      address            = 0;
+      dataIndex          = 0;
+      data[dataIndex]    = byte_receive; // we don't really need this
       dataIndex++;
-    } else if ((state == 1) && (dataIndex < MAX_PACKET_LENGTH)) {
-      data[dataIndex] = byte_receive;
-
+    } else if (statePacketStarted && (dataIndex < MAX_PACKET_LENGTH)) {
       if (dataIndex < IDX_CHECKSUM) {
-        checksum = checksum + byte_receive;
+        // this assumes the checksum is last so only bytes before it
+        // gets added to the checksum.
+        checksum += byte_receive;
       }
+      data[dataIndex] = byte_receive;
       dataIndex++;
 
       if (dataIndex == MAX_PACKET_LENGTH) {
-        // we are at the last byte of the packet
-        dataIndex = 0;
-        state     = 0;
+        // we are at the last byte of the packet, get ready for the next one
+        dataIndex          = 0;
+        statePacketStarted = false;
 
         if (data[IDX_CHECKSUM] == checksum) {
           debugCommsRx(false);
@@ -103,16 +97,23 @@ void readLoop() {
           // do we need to check the sender addr?
           address = hex2addr(data[IDX_ADDR_RECEIVER]);
 
-          if (address == myID) {
-            if (data[IDX_PAYLOAD] == 'P') {
-              // TODO measure the interval here
-              stateDisplay    = HR;
-              lastMessageTime = millis();
-            } // only respond to 'P' messages
-              // if necessary send an ack here
-          }   // packet is for me
-        }     // checksum ok
-      } // end of packet
-    }   // not start byte
-  }     // while
+          if ((address == myID) || (address == ADDR_BROADCAST)) {
+            dealWithPayload(data[IDX_PAYLOAD]);
+
+            // if necessary send an ack here
+          } // packet is for me
+        }   // checksum ok
+      }     // end of packet
+    }       // not start byte
+  }                            // while
+}
+
+long lastPulseMessageTime = 0; // last time an incoming pulse message was
+                               // received
+void dealWithPayload(byte payload) {
+  if (payload == 'P') {
+    long now = millis();
+    rememberInterval(lastPulseMessageTime - now);
+    lastPulseMessageTime = now;
+  }
 }
