@@ -31,7 +31,16 @@ volatile boolean gotPulse = false;
 // -------------- Interval managment properties
 long fadeDelay  = 30;
 byte brightness = 0;
+#define MAX_INTERVAL_LENGTH_MS 2140
+#define MIN_INTERVAL_LENGTH_MS 200
+#define  MAX_INTERVALS 5
+long intervals[MAX_INTERVALS];
+int  indexInterval = 0;
+long lastInterval  = 0;
+int  fadeAmount    = 5;
+boolean showPulse  = false;
 
+// ---------------- Setup
 void setup() {
   // setup Input pin and Interrupt
   pinMode(PinINPUT0, INPUT_PULLUP);
@@ -66,9 +75,10 @@ void setup() {
   toID = 0;
   toID = toID + !digitalRead(PinADDR2);
   toID = toID + 2 * !digitalRead(PinADDR3);
+  workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
 }
 
-// ---------- main loop
+// ---------- Loop
 void loop() {
   checkSend();
   readLoop();
@@ -91,31 +101,50 @@ void pulseISR() {
 // --------------- Visual Methods
 void changeVisuals() {
   debugVisuals(true);
-  setPixelColor(0, 0, brightness);
-  adjustBrightness();
+  checkLiveCount();
+
+  if (showPulse) {
+    setPixelColor(0, 10, brightness);
+    adjustBrightness();
+  } else {
+    setPixelColor(128, 0, 0);
+  }
   delay(fadeDelay);
   debugVisuals(false);
 }
 
 // -------------- Interval managment methods
-#define MAX_INTERVAL_LENGTH_MS 2140
-#define MIN_INTERVAL_LENGTH_MS 200
-#define  MAX_INTERVALS 5
-long intervals[MAX_INTERVALS];
-int  indexInterval = 0;
-long lastInterval  = 0;
-int  fadeAmount    = 5;
 
+// #define MAX_DEATH_COUNT (MAX_INTERVAL_LENGTH_MS/fadeDelay)
+#define MAX_LIVE_COUNT 210
+int liveCount = MAX_LIVE_COUNT;
 void rememberInterval(long interval) {
   debugToggleVisuals();
+  showPulse = true;
+  liveCount = MAX_LIVE_COUNT;
+
 
   // remember the last MAX_INTERVALS intervals between pulses
+  // we don't use this yet but we can use it to get a better average
   lastInterval             = interval;
   intervals[indexInterval] = interval;
   indexInterval++;
 
   if (indexInterval == MAX_INTERVALS) {
     indexInterval = 0;
+  }
+
+  if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
+      (interval <= MAX_INTERVAL_LENGTH_MS)) {
+    workOutFadeDelay(interval);
+  }
+}
+
+void checkLiveCount() {
+  if (liveCount <= 0) {
+    showPulse = false;
+  } else {
+    liveCount--;
   }
 }
 
@@ -160,5 +189,5 @@ void debugToggleVisuals() {
 }
 
 void debugVisuals(boolean on) {
-  digitalWrite(PinLED, on ? HIGH : LOW);
+  // digitalWrite(PinLED, on ? HIGH : LOW);
 }
