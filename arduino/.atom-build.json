@@ -1,6 +1,6 @@
 {
   "cmd": "arduino",
-  "args": [ "{FILE_ACTIVE}", "--upload"],
+  "args": [ "{FILE_ACTIVE}", "--upload", "--board", "arduino:avr:pro", "--port", "/dev/ttyUSB0"],
   "sh": true,
   "cwd": "",
   "errorMatch": "^(?<file>[^\\.]+.ino):(?<line>\\d+):(?<col>\\d+)"
