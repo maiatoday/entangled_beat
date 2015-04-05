@@ -29,7 +29,7 @@ byte toID;
 volatile boolean gotPulse = false;
 
 // -------------- Interval managment properties
-long fadeDelay     = 200;
+long fadeDelay  = 30;
 byte brightness = 0;
 
 void setup() {
@@ -90,10 +90,11 @@ void pulseISR() {
 
 // --------------- Visual Methods
 void changeVisuals() {
-  //debugVisuals(true);
-  //setPixelColor(255, 255, 255);
+  debugVisuals(true);
+  setPixelColor(0, 0, brightness);
+  adjustBrightness();
   delay(fadeDelay);
-//  debugVisuals(false);
+  debugVisuals(false);
 }
 
 // -------------- Interval managment methods
@@ -125,6 +126,14 @@ void workOutFadeDelay(long interval) {
   fadeDelay = (interval * fadeAmount) / (255 * 2);
 }
 
+void adjustBrightness() {
+  brightness = brightness + fadeAmount;
+
+  if ((brightness == 0) || (brightness == 255)) {
+    fadeAmount = -fadeAmount;
+  }
+}
+
 // -------------- Debug methods
 
 bool debugToggle = false;
@@ -141,11 +150,11 @@ void debugCommsRx(boolean on) {
 }
 
 void debugToggleVisuals() {
-  if (debugToggle) {
-    setPixelColor(255, 0, 0);
-  } else {
-    setPixelColor(0, 255, 255);
-  }
+  // if (debugToggle) {
+  //   setPixelColor(255, 0,   0);
+  // } else {
+  //   setPixelColor(0,   255, 255);
+  // }
   debugVisuals(debugToggle);
   debugToggle = !debugToggle;
 }
