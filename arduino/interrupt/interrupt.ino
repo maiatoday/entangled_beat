@@ -17,28 +17,20 @@
 #define PinINPUT1        8
 #define PinINPUT0        9
 
-#define tNAK             15
-#define tENQ             5
-#define tACK             6
-
 #define ledB             10
 #define ledG             11
 #define ledR             12
-
-#define numPixels        1
-#define wait             80
 
 #define mybaud           9600
 
 byte myID;
 byte toID;
 
-long lastDebounceTime = 0;   // the last time the output pin was toggled
-long debounceDelay    = 200; // the debounce time; increase if the output
-                             // flickers
-long displayDelay    = 300;
+volatile boolean gotPulse = false;
 
-volatile boolean stateChange;
+// -------------- Interval managment properties
+long fadeDelay     = 200;
+byte brightness = 0;
 
 void setup() {
   // setup Input pin and Interrupt
@@ -50,7 +42,7 @@ void setup() {
                                                            // triggers an
                                                            // interrupt
 
-  stateChange  = false;
+  gotPulse = false;
 
   pinMode(PinLED,       OUTPUT);
   pinMode(RS485Control, OUTPUT);
@@ -84,67 +76,53 @@ void loop() {
 }
 
 void checkSend() {
-  if (stateChange) {
+  if (gotPulse) {
     debugCommsTx(true);
-    stateChange = false;
+    gotPulse = false;
     sendMSG(myID, toID, 'P');
     debugCommsTx(false);
   }
 }
 
 void pulseISR() {
-  stateChange = true;
+  gotPulse = true;
 }
 
 // --------------- Visual Methods
 void changeVisuals() {
-
   //debugVisuals(true);
-  // Check if HR received in last 4 beats
-//  if ((millis() - lastMessageTime) > 4 * debounceDelay) {
-//    stateDisplay = notHR;
-//  } else {
-//    stateDisplay = HR;
-
-    /* mg
-       //display state machine
-       //in hr
-       if (stateDisplay == HR)
-       if (stateChange){
-        //digitalWrite(PinLED,HIGH);
-        setPixelColor(255,255,255);
-         = millis();
-       } else {
-        if ((millis() - ) > displayDelay) {
-          //digitalWrite(PinLED,LOW);
-          setPixelColor(0,0,0);
-        }
-       }
-       else
-       //digitalWrite(PinLED,LOW);
-       setPixelColor(0,0,0);
-       //in not hr
-     */
-    //debugVisuals(false);
-  //}
+  //setPixelColor(255, 255, 255);
+  delay(fadeDelay);
+//  debugVisuals(false);
 }
 
 // -------------- Interval managment methods
+#define MAX_INTERVAL_LENGTH_MS 2140
+#define MIN_INTERVAL_LENGTH_MS 200
 #define  MAX_INTERVALS 5
 long intervals[MAX_INTERVALS];
-int indexInterval = 0;
-long lastInterval = 0;
+int  indexInterval = 0;
+long lastInterval  = 0;
+int  fadeAmount    = 5;
 
 void rememberInterval(long interval) {
   debugToggleVisuals();
+
   // remember the last MAX_INTERVALS intervals between pulses
-  lastInterval = interval;
+  lastInterval             = interval;
   intervals[indexInterval] = interval;
   indexInterval++;
+
   if (indexInterval == MAX_INTERVALS) {
     indexInterval = 0;
   }
+}
 
+void workOutFadeDelay(long interval) {
+  // fade levels are from 0 to 255 and back so the whole interval should be
+  // divided into 255*2
+
+  fadeDelay = (interval * fadeAmount) / (255 * 2);
 }
 
 // -------------- Debug methods
@@ -159,13 +137,19 @@ void debugCommsTx(boolean on) {
 }
 
 void debugCommsRx(boolean on) {
-  //digitalWrite(PinLED, on ? HIGH : LOW);
+  // digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
 void debugToggleVisuals() {
+  if (debugToggle) {
+    setPixelColor(255, 0, 0);
+  } else {
+    setPixelColor(0, 255, 255);
+  }
   debugVisuals(debugToggle);
   debugToggle = !debugToggle;
 }
+
 void debugVisuals(boolean on) {
-  digitalWrite(PinLED,on?HIGH:LOW);
+  digitalWrite(PinLED, on ? HIGH : LOW);
 }

@@ -14,6 +14,10 @@ unsigned int checksum;
 
 #define ADDR_BROADCAST 10
 
+#define tNAK             15
+#define tENQ             5
+#define tACK             6
+
 byte hex2addr(byte x) {
   byte result = x;
 
