@@ -1,0 +1,7 @@
+{
+  "cmd": "arduino",
+  "args": [ "{FILE_ACTIVE}", "--upload", "--board", "arduino:avr:uno", "--port", "/dev/ttyACM0"],
+  "sh": true,
+  "cwd": "",
+  "errorMatch": "^(?<file>[^\\.]+.ino):(?<line>\\d+):(?<col>\\d+)"
+}
