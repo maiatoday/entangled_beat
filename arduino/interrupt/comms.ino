@@ -3,8 +3,12 @@
 #define IDX_ADDR_SENDER    1
 #define IDX_ADDR_RECEIVER  2
 #define IDX_PAYLOAD        3
-#define IDX_CHECKSUM       4
-#define MAX_PACKET_LENGTH  5
+#define IDX_INTERVAL0      4
+#define IDX_INTERVAL1      5
+#define IDX_INTERVAL2      6
+#define IDX_INTERVAL3      7
+#define IDX_CHECKSUM       8
+#define MAX_PACKET_LENGTH  9
 byte data[MAX_PACKET_LENGTH];
 byte address;
 byte byte_receive;
@@ -35,22 +39,27 @@ byte addr2hex(byte x) {
 }
 
 // --------------- Comms TX methods
-void sendMSG(byte address1, byte address2, byte data) {
-  sendData(tENQ, addr2hex(address1), addr2hex(address2), data);
+void sendMSG(byte address1, byte address2, byte data, long data2) {
+  sendData(tENQ, addr2hex(address1), addr2hex(address2), data, data2);
 }
 
 void sendACK(byte address1, byte address2, byte data) {
-  sendData(tACK, address1, address2, data);
+  sendData(tACK, address1, address2, data, 0L);
 }
 
 void sendNAK(byte address1, byte address2, byte data) {
-  sendData(tNAK, address1, address2, data);
+  sendData(tNAK, address1, address2, data, 0L);
 }
 
-void sendData(byte type, byte address1, byte address2, byte data) {
+void sendData(byte type, byte address1, byte address2, byte data, long data2) {
   unsigned int checksum_ACK;
+  byte b[4];
+  longToBytes(data2, b);
 
   checksum_ACK = address1 + address2 + data;
+  for (int i = 0; i<4; i++) {
+    checksum_ACK += b[i];
+    }
 
   digitalWrite(RS485Control, RS485Transmit); // Enable RS485 Transmit
 
@@ -60,6 +69,7 @@ void sendData(byte type, byte address1, byte address2, byte data) {
   Serial.write(address1);                   // IDX_ADDR_SENDER
   Serial.write(address2);                   // IDX_ADDR_RECEIVER
   Serial.write(data);                       // IDX_PAYLOAD
+  Serial.write(b, 4);                       // IDX_INTERVAL0
   Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
   Serial.flush();
 
@@ -102,22 +112,32 @@ void readLoop() {
           address = hex2addr(data[IDX_ADDR_RECEIVER]);
 
           if ((address == myID) || (address == ADDR_BROADCAST)) {
-            dealWithPayload(data[IDX_PAYLOAD]);
+            long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
+            dealWithPayload(data[IDX_PAYLOAD], data2);
 
             // if necessary send an ack here
           } // packet is for me
-        }   // checksum ok
+        }   // checksum() ok
       }     // end of packet
     }       // not start byte
   }                            // while
 }
 
-long lastPulseMessageTime = 0; // last time an incoming pulse message was
-                               // received
-void dealWithPayload(byte payload) {
+void dealWithPayload(byte payload, long data2) {
   if (payload == 'P') {
-    long now = millis();
-    rememberInterval(lastPulseMessageTime - now);
-    lastPulseMessageTime = now;
+    //long now = millis();
+    rememberInterval(data2);
+    //lastPulseMessageTime = now;
   }
+}
+
+void longToBytes(long l, byte* b) {
+  b[0] = (byte) l & 0xFF;
+  b[1] = (byte) ((l >> 8) & 0xFF);
+  b[2] = (byte) ((l >> 16) & 0xFF);
+  b[3] = (byte) ((l >> 24) & 0xFF);
+}
+
+long bytesToLong(byte b0, byte b1, byte b2, byte b3) {
+  return (long) (b3<<24) | (b2<<16) | (b1<<8) | b0;
 }

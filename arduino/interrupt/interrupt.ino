@@ -28,6 +28,10 @@ byte toID;
 
 volatile boolean gotPulse = false;
 
+volatile long lastPulseMessageTime = 0; // last time an incoming pulse message was
+                               // received
+volatile long pulseInterval = 0;
+
 // -------------- Interval managment properties
 long fadeDelay  = 30;
 byte brightness = 0;
@@ -76,6 +80,7 @@ void setup() {
   toID = toID + !digitalRead(PinADDR2);
   toID = toID + 2 * !digitalRead(PinADDR3);
   workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
+  lastPulseMessageTime = millis();
 }
 
 // ---------- Loop
@@ -89,12 +94,16 @@ void checkSend() {
   if (gotPulse) {
     debugCommsTx(true);
     gotPulse = false;
-    sendMSG(myID, toID, 'P');
+    sendMSG(myID, toID, 'P', pulseInterval);
     debugCommsTx(false);
   }
 }
 
 void pulseISR() {
+
+  long now = millis();
+  pulseInterval = lastPulseMessageTime - now;
+  lastPulseMessageTime = now;
   gotPulse = true;
 }
 

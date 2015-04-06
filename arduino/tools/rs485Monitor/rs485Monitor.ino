@@ -29,8 +29,9 @@ byte dataIndex = 0;
 #define IDX_ADDR_SENDER    1
 #define IDX_ADDR_RECEIVER  2
 #define IDX_PAYLOAD        3
-#define IDX_CHECKSUM       4
-#define MAX_PACKET_LENGTH  5
+// 4 bytes go here
+#define IDX_CHECKSUM       8
+#define MAX_PACKET_LENGTH  9
 byte data[MAX_PACKET_LENGTH];
 
 // /
@@ -51,7 +52,7 @@ void setup() /****** SETUP: RUNS ONCE ******/
 {
   // Start the built-in serial port, probably to Serial Monitor
   Serial.begin(mybaud);
-  Serial.println("SerialRemote"); // Can be ignored
+  Serial.println("_SerialRemote_"); // Can be ignored
 
   pinMode(Pin13LED,         OUTPUT);
   pinMode(SSerialTxControl, OUTPUT);
