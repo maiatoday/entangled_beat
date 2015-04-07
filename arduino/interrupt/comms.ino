@@ -9,6 +9,8 @@
 #define IDX_INTERVAL3      7
 #define IDX_CHECKSUM       8
 #define MAX_PACKET_LENGTH  9
+/*#define IDX_CHECKSUM       4*/
+/*#define MAX_PACKET_LENGTH  5*/
 byte data[MAX_PACKET_LENGTH];
 byte address;
 byte byte_receive;
@@ -53,13 +55,15 @@ void sendNAK(byte address1, byte address2, byte data) {
 
 void sendData(byte type, byte address1, byte address2, byte data, long data2) {
   unsigned int checksum_ACK;
-  byte b[4];
-  longToBytes(data2, b);
+  /*byte b[4];
+  longToBytes(data2, b);*/
 
-  checksum_ACK = address1 + address2 + data;
-  for (int i = 0; i<4; i++) {
+  byte test = 0x01;
+  checksum_ACK = address1 + address2 + data + test + test + test + test ;
+  /*checksum_ACK = address1 + address2 + data ;*/
+  /*for (int i = 0; i<4; i++) {
     checksum_ACK += b[i];
-    }
+    }*/
 
   digitalWrite(RS485Control, RS485Transmit); // Enable RS485 Transmit
 
@@ -69,7 +73,15 @@ void sendData(byte type, byte address1, byte address2, byte data, long data2) {
   Serial.write(address1);                   // IDX_ADDR_SENDER
   Serial.write(address2);                   // IDX_ADDR_RECEIVER
   Serial.write(data);                       // IDX_PAYLOAD
-  Serial.write(b, 4);                       // IDX_INTERVAL0
+  /*Serial.write(b, 4);                       // IDX_INTERVAL0*/
+  /*Serial.write(b[0]);                       // IDX_INTERVAL0
+  Serial.write(b[1]);                       // IDX_INTERVAL1
+  Serial.write(b[2]);                       // IDX_INTERVAL2
+  Serial.write(b[3]);                       // IDX_INTERVAL3*/
+  Serial.write(test);                       // IDX_INTERVAL0
+  Serial.write(test);                       // IDX_INTERVAL1
+  Serial.write(test);                       // IDX_INTERVAL2
+  Serial.write(test);                       // IDX_INTERVAL3
   Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
   Serial.flush();
 
@@ -112,8 +124,9 @@ void readLoop() {
           address = hex2addr(data[IDX_ADDR_RECEIVER]);
 
           if ((address == myID) || (address == ADDR_BROADCAST)) {
-            long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
-            dealWithPayload(data[IDX_PAYLOAD], data2);
+            /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
+            dealWithPayload(data[IDX_PAYLOAD], data2);*/
+            dealWithPayload(data[IDX_PAYLOAD], 2140L);
 
             // if necessary send an ack here
           } // packet is for me

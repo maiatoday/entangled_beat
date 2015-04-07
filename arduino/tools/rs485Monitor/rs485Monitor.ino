@@ -73,18 +73,19 @@ void loop() /****** LOOP: RUNS CONSTANTLY ******/
     byte_receive = RS485Serial.read();
     Serial.write(byte_receive);
 
-    if (byte_receive == 00) {
+    /*if (byte_receive == 00) {
       state           = 1;
       checksum_in_msg = 0;
       checksum        = 0;
+      dataIndex       = 0;
       trace_OK        = 0;
       address         = 0;
       data_received   = 0;
+      data[dataIndex] = byte_receive;
       dataIndex++;
 
       // Serial.println("Start packet");
     } else if ((state == 1) && (dataIndex < MAX_PACKET_LENGTH)) {
-      data[dataIndex] = byte_receive;
 
       if (dataIndex < IDX_CHECKSUM) {
         checksum = checksum + byte_receive;
@@ -92,6 +93,7 @@ void loop() /****** LOOP: RUNS CONSTANTLY ******/
 
       //    Serial.write('c');
       //    Serial.write(checksum);
+      data[dataIndex] = byte_receive;
       dataIndex++;
 
       if (dataIndex == MAX_PACKET_LENGTH) {
@@ -110,6 +112,6 @@ void loop() /****** LOOP: RUNS CONSTANTLY ******/
           Serial.write(checksum_in_msg);
         }
       }
-    }
+    }*/
   }
 } // --(end main loop )---

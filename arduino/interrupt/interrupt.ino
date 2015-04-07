@@ -127,6 +127,9 @@ void changeVisuals() {
 // #define MAX_DEATH_COUNT (MAX_INTERVAL_LENGTH_MS/fadeDelay)
 #define MAX_LIVE_COUNT 210
 int liveCount = MAX_LIVE_COUNT;
+/** rememberInterval records the interval between beats.
+ * It gets called when a packet with an interval  arrives
+ */
 void rememberInterval(long interval) {
   debugToggleVisuals();
   showPulse = true;
@@ -142,11 +145,12 @@ void rememberInterval(long interval) {
   if (indexInterval == MAX_INTERVALS) {
     indexInterval = 0;
   }
-
+/* just for debug
   if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
       (interval <= MAX_INTERVAL_LENGTH_MS)) {
     workOutFadeDelay(interval);
   }
+  */
 }
 
 void checkLiveCount() {
