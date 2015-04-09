@@ -1,10 +1,5 @@
 #include <PinChangeInt.h>
 
-#define RS485Control     17 // RS485 Direction control
-
-#define RS485Transmit    HIGH
-#define RS485Receive     LOW
-
 #define PinLED           13
 
 #define PinADDR0         2
@@ -21,14 +16,13 @@
 #define ledG             11
 #define ledR             12
 
-#define mybaud           9600
-
 byte myID;
 byte toID;
 
-volatile boolean gotPulse = false;
-volatile long lastPulseMessageTime = 0; // last time an incoming pulse message was
-                               // received
+volatile boolean gotPulse             = false;
+volatile long    lastPulseMessageTime = 0; // last time an incoming pulse
+                                           // message was
+// received
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
@@ -56,7 +50,7 @@ void setup() {
 
   gotPulse = false;
 
-  pinMode(PinLED,       OUTPUT);
+  pinMode(PinLED, OUTPUT);
   commsSetup();
 
   pinMode(ledB,     OUTPUT);
@@ -96,9 +90,10 @@ void checkSend() {
 
 void pulseISR() {
   long now = millis();
-  pulseInterval = lastPulseMessageTime - now;
+
+  pulseInterval        = lastPulseMessageTime - now;
   lastPulseMessageTime = now;
-  gotPulse = true;
+  gotPulse             = true;
 }
 
 // --------------- Visual Methods
