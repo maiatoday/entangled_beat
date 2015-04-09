@@ -27,6 +27,9 @@ byte myID;
 byte toID;
 
 volatile boolean gotPulse = false;
+volatile long lastPulseMessageTime = 0; // last time an incoming pulse message was
+                               // received
+volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
 long fadeDelay  = 30;
@@ -54,10 +57,7 @@ void setup() {
   gotPulse = false;
 
   pinMode(PinLED,       OUTPUT);
-  pinMode(RS485Control, OUTPUT);
-  digitalWrite(RS485Control, RS485Receive);
-
-  Serial.begin(mybaud);
+  commsSetup();
 
   pinMode(ledB,     OUTPUT);
   pinMode(ledR,     OUTPUT);
@@ -89,12 +89,15 @@ void checkSend() {
   if (gotPulse) {
     debugCommsTx(true);
     gotPulse = false;
-    sendMSG(myID, toID, 'P');
+    sendMSG(myID, toID, 'P', pulseInterval);
     debugCommsTx(false);
   }
 }
 
 void pulseISR() {
+  long now = millis();
+  pulseInterval = lastPulseMessageTime - now;
+  lastPulseMessageTime = now;
   gotPulse = true;
 }
 

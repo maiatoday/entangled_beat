@@ -34,8 +34,18 @@ byte addr2hex(byte x) {
   return result;
 }
 
+// ---------------- Comms Setup method
+// == commsSetup is called from elsewhere
+void commsSetup() {
+  pinMode(RS485Control, OUTPUT);
+  digitalWrite(RS485Control, RS485Receive);
+
+  Serial.begin(mybaud);
+}
+
 // --------------- Comms TX methods
-void sendMSG(byte address1, byte address2, byte data) {
+// === sendMSG is called from elsewhere
+void sendMSG(byte address1, byte address2, byte data, long interval) {
   sendData(tENQ, addr2hex(address1), addr2hex(address2), data);
 }
 
@@ -67,6 +77,7 @@ void sendData(byte type, byte address1, byte address2, byte data) {
 }
 
 // ---------------- Comms Rx methods
+// === readLoop is called from elsewhere and calls back with rememberInterval
 void readLoop() {
   // fixed length packets as defined at the top of the file.
   while (Serial.available() > 0) {
@@ -109,15 +120,52 @@ void readLoop() {
         }   // checksum ok
       }     // end of packet
     }       // not start byte
-  }                            // while
+  } // while
 }
 
-long lastPulseMessageTime = 0; // last time an incoming pulse message was
-                               // received
 void dealWithPayload(byte payload) {
   if (payload == 'P') {
-    long now = millis();
-    rememberInterval(lastPulseMessageTime - now);
-    lastPulseMessageTime = now;
+    // get interval from message
+    rememberInterval(2140L);
   }
 }
+
+// --------------------new stuff for lib
+
+#include "RS485_protocol.h"
+void fWrite(const byte what)
+{
+  Serial.write(what);
+}
+
+int fAvailable()
+{
+  return Serial.available();
+}
+
+int fRead()
+{
+  return Serial.read();
+}
+
+/*
+   // send to slave
+   digitalWrite (ENABLE_PIN, HIGH);  // enable sending
+   sendMsg (fWrite, msg, sizeof msg);
+   digitalWrite (ENABLE_PIN, LOW);  // disable sending
+ */
+
+/*
+   // receive response
+   byte buf [10];
+   byte received = recvMsg (fAvailable, fRead, buf, sizeof buf);
+   if (received)
+   {
+   if (buf [0] != 1)
+    return;  // not my device
+
+   if (buf [1] != 2)
+    return;  // unknown command
+
+   };
+ */
