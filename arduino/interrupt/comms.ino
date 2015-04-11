@@ -39,23 +39,6 @@ RS485 myChannel(fRead,
                 fWrite,
                 20);
 
-
-byte hex2addr(byte x) {
-  byte result = x;
-
-  if (x >= 48) {
-    result = x - 48;
-  }
-  return result;
-}
-
-byte addr2hex(byte x) {
-  byte result;
-
-  result = 48 + x;
-  return result;
-}
-
 // ---------------- Comms Setup method
 // == commsSetup is called from elsewhere
 void commsSetup() {
@@ -68,7 +51,7 @@ void commsSetup() {
 // --------------- Comms TX methods
 // === sendMSG is called from elsewhere
 void sendMSG(byte address1, byte address2, byte data, long interval) {
-  sendData(addr2hex(address1), addr2hex(address2), data, interval);
+  sendData(address1, address2, data, interval);
 }
 
 void sendData(byte address1, byte address2, byte data, long interval) {
@@ -99,11 +82,12 @@ void readLoop() {
 
     // do we need to check the sender addr?
     const byte *data = myChannel.getData();
-    byte address     = hex2addr(data[IDX_ADDR_RECEIVER]);
+    byte address     = data[IDX_ADDR_RECEIVER];
 
     if ((address == myID) || (address == ADDR_BROADCAST)) {
       dealWithPayload(data[IDX_PAYLOAD],
-                      bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1],
+                      bytesToLong(data[IDX_INTERVAL0],
+                                  data[IDX_INTERVAL1],
                                   data[IDX_INTERVAL2],
                                   data[IDX_INTERVAL3]));
 

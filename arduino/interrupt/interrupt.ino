@@ -30,9 +30,6 @@ long fadeDelay  = 30;
 byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
-#define  MAX_INTERVALS 5
-long intervals[MAX_INTERVALS];
-int  indexInterval = 0;
 long lastInterval  = 0;
 int  fadeAmount    = 5;
 boolean showPulse  = false;
@@ -121,16 +118,7 @@ void rememberInterval(long interval) {
   showPulse = true;
   liveCount = MAX_LIVE_COUNT;
 
-
-  // remember the last MAX_INTERVALS intervals between pulses
-  // we don't use this yet but we can use it to get a better average
-  lastInterval             = interval;
-  intervals[indexInterval] = interval;
-  indexInterval++;
-
-  if (indexInterval == MAX_INTERVALS) {
-    indexInterval = 0;
-  }
+  lastInterval = interval;
 
   if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
       (interval <= MAX_INTERVAL_LENGTH_MS)) {
