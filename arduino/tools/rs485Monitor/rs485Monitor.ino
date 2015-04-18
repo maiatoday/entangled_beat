@@ -29,10 +29,16 @@ byte dataIndex = 0;
 #define IDX_ADDR_SENDER    1
 #define IDX_ADDR_RECEIVER  2
 #define IDX_PAYLOAD        3
-// 4 bytes go here
+#define IDX_INTERVAL0      4
+#define IDX_INTERVAL1      5
+#define IDX_INTERVAL2      6
+#define IDX_INTERVAL3      7
 #define IDX_CHECKSUM       8
 #define MAX_PACKET_LENGTH  9
 byte data[MAX_PACKET_LENGTH];
+
+bool statePacketStarted = false;
+#define DEBUG_PROTOCOL true
 
 // /
 
@@ -53,6 +59,8 @@ void setup() /****** SETUP: RUNS ONCE ******/
   // Start the built-in serial port, probably to Serial Monitor
   Serial.begin(mybaud);
   Serial.println("_SerialRemote_"); // Can be ignored
+  /* long encoding tests
+
   char c[5];
   longToChar(1L, c);
   Serial.println(c);
@@ -88,7 +96,7 @@ void setup() /****** SETUP: RUNS ONCE ******/
   } else {
       Serial.println("2140L error");
   }
-  Serial.println(c);
+  Serial.println(c);*/
 
 
   pinMode(Pin13LED,         OUTPUT);
@@ -108,50 +116,74 @@ void loop() /****** LOOP: RUNS CONSTANTLY ******/
 
   while (RS485Serial.available() > 0) {
     byte_receive = RS485Serial.read();
-    Serial.write(byte_receive);
-
-    /*if (byte_receive == 00) {
-      state           = 1;
-      checksum_in_msg = 0;
-      checksum        = 0;
-      dataIndex       = 0;
-      trace_OK        = 0;
-      address         = 0;
-      data_received   = 0;
-      data[dataIndex] = byte_receive;
-      dataIndex++;
-
-      // Serial.println("Start packet");
-    } else if ((state == 1) && (dataIndex < MAX_PACKET_LENGTH)) {
-
-      if (dataIndex < IDX_CHECKSUM) {
-        checksum = checksum + byte_receive;
-      }
-
-      //    Serial.write('c');
-      //    Serial.write(checksum);
-      data[dataIndex] = byte_receive;
-      dataIndex++;
-
-      if (dataIndex == MAX_PACKET_LENGTH) {
-        // Serial.println("end packet");
-        checksum_in_msg = data[IDX_CHECKSUM];
-        state           = 0;
-        dataIndex       = 0;
-
-        // end of packet
-        if (checksum_in_msg == checksum) {
-          trace_OK = 1;
-          Serial.println("Decode");
-        } else {
-          Serial.write('?');
-          Serial.write(checksum);
-          Serial.write(checksum_in_msg);
+    /*Serial.write(byte_receive);*/
+    Serial.print(byte_receive, HEX);
+    Serial.print(' ');
+    if (DEBUG_PROTOCOL) {
+    if (byte_receive == 00) {
+        // 00 is a start of message so start collecting
+          //  debugCommsRx(true);
+          Serial.print("!");
+        statePacketStarted = true;
+        checksum           = 0;
+        address            = 0;
+        dataIndex          = 0;
+        data[dataIndex]    = byte_receive; // we don't really need this
+        dataIndex++;
+      } else if (statePacketStarted && (dataIndex < MAX_PACKET_LENGTH)) {
+        if (dataIndex < IDX_CHECKSUM) {
+          // this assumes the checksum is last so only bytes before it
+          // gets added to the checksum.
+          checksum += byte_receive;
         }
-      }
-    }*/
+        data[dataIndex] = byte_receive;
+        dataIndex++;
+
+        if (dataIndex == MAX_PACKET_LENGTH) {
+          // we are at the last byte of the packet, get ready for the next one
+          dataIndex          = 0;
+          statePacketStarted = false;
+
+          if (data[IDX_CHECKSUM] == (checksum&0xFF)) {
+            /*debugCommsRx(false);*/
+
+            // do we need to check the sender addr?
+            //address = hex2addr(data[IDX_ADDR_RECEIVER]);
+
+            //if ((address == myID) || (address == ADDR_BROADCAST)) {
+              /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1],
+                 data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
+                 dealWithPayload(data[IDX_PAYLOAD], data2);*/
+              char b[5] =
+              { data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2],
+                data[IDX_INTERVAL3], 0 };
+
+              unsigned long data2 = charsToLong(b);
+              dealWithPayload(data[IDX_PAYLOAD], data2);
+
+              /*dealWithPayload(data[IDX_PAYLOAD], 2140L);*/
+
+              // if necessary send an ack here
+          //  } // packet is for me
+          }   else {
+            Serial.println("!!bad checksum!! ");
+            Serial.println(data[IDX_CHECKSUM], HEX);
+            Serial.println(checksum&0xFF, HEX);
+            }
+        }     // end of packet
+      }       // not start byte
+    }
   }
 } // --(end main loop )---
+
+void dealWithPayload(byte payload, long data2) {
+  if (payload == 'P') {
+    char dd[5];
+    longToChar(data2, dd);
+    Serial.print(" payload ms: ");
+    Serial.println(dd);
+  }
+}
 
 void longToChar(unsigned long l, char *b) {
   if (l <= 9) {
