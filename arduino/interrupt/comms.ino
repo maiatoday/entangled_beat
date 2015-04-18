@@ -3,8 +3,15 @@
 #define IDX_ADDR_SENDER    1
 #define IDX_ADDR_RECEIVER  2
 #define IDX_PAYLOAD        3
-#define IDX_CHECKSUM       4
-#define MAX_PACKET_LENGTH  5
+#define IDX_INTERVAL0      4
+#define IDX_INTERVAL1      5
+#define IDX_INTERVAL2      6
+#define IDX_INTERVAL3      7
+#define IDX_CHECKSUM       8
+#define MAX_PACKET_LENGTH  9
+
+/*#define IDX_CHECKSUM       4*/
+/*#define MAX_PACKET_LENGTH  5*/
 byte data[MAX_PACKET_LENGTH];
 byte address;
 byte byte_receive;
@@ -35,32 +42,55 @@ byte addr2hex(byte x) {
 }
 
 // --------------- Comms TX methods
-void sendMSG(byte address1, byte address2, byte data) {
-  sendData(tENQ, addr2hex(address1), addr2hex(address2), data);
+void sendMSG(byte address1, byte address2, byte data, unsigned long data2) {
+  sendData(tENQ, addr2hex(address1), addr2hex(address2), data, data2);
 }
 
 void sendACK(byte address1, byte address2, byte data) {
-  sendData(tACK, address1, address2, data);
+  sendData(tACK, address1, address2, data, 0L);
 }
 
 void sendNAK(byte address1, byte address2, byte data) {
-  sendData(tNAK, address1, address2, data);
+  sendData(tNAK, address1, address2, data, 0L);
 }
 
-void sendData(byte type, byte address1, byte address2, byte data) {
+void sendData(byte type, byte address1, byte address2, byte data, unsigned long data2) {
   unsigned int checksum_ACK;
+  char b[5];
 
-  checksum_ACK = address1 + address2 + data;
+  longToChar(data2, b);
+
+  // char test = '1';
+
+  // checksum_ACK = address1 + address2 + data + test + test + test + test;
+  checksum_ACK = address1 + address2 + data + b[0] + b[1] + b[2] + b[3];
+
+  /*checksum_ACK = address1 + address2 + data ;*/
+
+  /*for (int i = 0; i<4; i++) {
+     checksum_ACK += b[i];
+     }*/
 
   digitalWrite(RS485Control, RS485Transmit); // Enable RS485 Transmit
 
   delay(1);
 
-  Serial.write(0);                          // IDX_START_BYTE
-  Serial.write(address1);                   // IDX_ADDR_SENDER
-  Serial.write(address2);                   // IDX_ADDR_RECEIVER
-  Serial.write(data);                       // IDX_PAYLOAD
-  Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
+  Serial.write(0);        // IDX_START_BYTE
+  Serial.write(address1); // IDX_ADDR_SENDER
+  Serial.write(address2); // IDX_ADDR_RECEIVER
+  Serial.write(data);     // IDX_PAYLOAD
+
+  /*Serial.write(b, 4);                       // IDX_INTERVAL0*/
+
+  Serial.write(b[0]); // IDX_INTERVAL0
+  Serial.write(b[1]); // IDX_INTERVAL1
+  Serial.write(b[2]); // IDX_INTERVAL2
+  Serial.write(b[3]); // IDX_INTERVAL3
+  // Serial.write(test);                       // IDX_INTERVAL0
+  // Serial.write(test);                       // IDX_INTERVAL1
+  // Serial.write(test);                       // IDX_INTERVAL2
+  // Serial.write(test);                       // IDX_INTERVAL3
+  Serial.write(checksum_ACK & 0xFF);           // IDX_CHECKSUM
   Serial.flush();
 
   digitalWrite(RS485Control, RS485Receive); // Disable RS485 Transmit
@@ -95,29 +125,62 @@ void readLoop() {
         dataIndex          = 0;
         statePacketStarted = false;
 
-        if (data[IDX_CHECKSUM] == checksum) {
+        if (data[IDX_CHECKSUM] == (checksum&0xFF)) {
           debugCommsRx(false);
 
           // do we need to check the sender addr?
           address = hex2addr(data[IDX_ADDR_RECEIVER]);
 
           if ((address == myID) || (address == ADDR_BROADCAST)) {
-            dealWithPayload(data[IDX_PAYLOAD]);
+            /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1],
+               data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
+               dealWithPayload(data[IDX_PAYLOAD], data2);*/
+            char b[5] =
+            { data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2],
+              data[IDX_INTERVAL3], 0 };
+
+            unsigned long data2 = charsToLong(b);
+            dealWithPayload(data[IDX_PAYLOAD], data2);
 
             // if necessary send an ack here
           } // packet is for me
-        }   // checksum ok
+        }   // checksum() ok
       }     // end of packet
     }       // not start byte
-  }                            // while
+  } // while
 }
 
-long lastPulseMessageTime = 0; // last time an incoming pulse message was
-                               // received
-void dealWithPayload(byte payload) {
+void dealWithPayload(byte payload, long data2) {
   if (payload == 'P') {
-    long now = millis();
-    rememberInterval(lastPulseMessageTime - now);
-    lastPulseMessageTime = now;
+    rememberInterval(data2);
   }
+}
+
+//** very very fragile !! wants a buffer of 5 bytes long!
+void longToChar(unsigned long l, char *b) {
+  if (l <= 9) {
+    b[0] = ' ';
+    b[1] = ' ';
+    b[2] = ' ';
+    ltoa(l,                      &b[3], 10);
+  } else if (l <= 99) {
+    b[0] = ' ';
+    b[1] = ' ';
+    ltoa(l,                      &b[2], 10);
+  } else if (l <= 999) {
+    b[0] = ' ';
+    ltoa(l,                      &b[1], 10);
+  } else if (l <= 9999) {
+    ltoa(l,                      b, 10);
+  } else {
+    ltoa(MAX_INTERVAL_LENGTH_MS, b, 10);
+  }
+}
+
+//** very very fragile !! wants a buffer of 5 bytes long!
+unsigned long charsToLong(char *c) {
+  char s[5] = { c[0], c[1], c[2], c[3], 0 };
+
+  return atol(s);
+  // return atol("2140");
 }

@@ -28,17 +28,23 @@ byte toID;
 
 volatile boolean gotPulse = false;
 
+volatile long lastPulseMessageTime = 0; // last time an incoming pulse message was
+                               // received
+volatile long pulseInterval = 0;
+
 // -------------- Interval managment properties
 long fadeDelay  = 30;
 byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
 #define  MAX_INTERVALS 5
-long intervals[MAX_INTERVALS];
-int  indexInterval = 0;
+/*long intervals[MAX_INTERVALS];
+int  indexInterval = 0;*/
 long lastInterval  = 0;
 int  fadeAmount    = 5;
 boolean showPulse  = false;
+#define MIN_DELAY 5
+#define MAX_DELAY 300
 
 // ---------------- Setup
 void setup() {
@@ -76,6 +82,7 @@ void setup() {
   toID = toID + !digitalRead(PinADDR2);
   toID = toID + 2 * !digitalRead(PinADDR3);
   workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
+  lastPulseMessageTime = millis();
 }
 
 // ---------- Loop
@@ -89,51 +96,46 @@ void checkSend() {
   if (gotPulse) {
     debugCommsTx(true);
     gotPulse = false;
-    sendMSG(myID, toID, 'P');
+    sendMSG(myID, toID, 'P', pulseInterval);
     debugCommsTx(false);
   }
 }
 
 void pulseISR() {
+
+  long now = millis();
+  pulseInterval = now - lastPulseMessageTime;
+  lastPulseMessageTime = now;
   gotPulse = true;
 }
 
 // --------------- Visual Methods
 void changeVisuals() {
-  debugVisuals(true);
   checkLiveCount();
 
   if (showPulse) {
-    setPixelColor(0, 10, brightness);
+    debugVisuals(true);
+    setPixelColor(0, brightness, brightness);
     adjustBrightness();
   } else {
-    setPixelColor(128, 0, 0);
+    debugVisuals(false);
+    setPixelColor(80, 0, 0);
   }
   delay(fadeDelay);
-  debugVisuals(false);
 }
 
 // -------------- Interval managment methods
 
-// #define MAX_DEATH_COUNT (MAX_INTERVAL_LENGTH_MS/fadeDelay)
-#define MAX_LIVE_COUNT 210
+//MAX_LIVE_COUNT n cycles ((255*2)/5)*n
+#define MAX_LIVE_COUNT 310
 int liveCount = MAX_LIVE_COUNT;
+/** rememberInterval records the interval between beats.
+ * It gets called when a packet with an interval  arrives
+ */
 void rememberInterval(long interval) {
-  debugToggleVisuals();
   showPulse = true;
   liveCount = MAX_LIVE_COUNT;
-
-
-  // remember the last MAX_INTERVALS intervals between pulses
-  // we don't use this yet but we can use it to get a better average
   lastInterval             = interval;
-  intervals[indexInterval] = interval;
-  indexInterval++;
-
-  if (indexInterval == MAX_INTERVALS) {
-    indexInterval = 0;
-  }
-
   if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
       (interval <= MAX_INTERVAL_LENGTH_MS)) {
     workOutFadeDelay(interval);
@@ -143,6 +145,7 @@ void rememberInterval(long interval) {
 void checkLiveCount() {
   if (liveCount <= 0) {
     showPulse = false;
+    workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
   } else {
     liveCount--;
   }
@@ -151,8 +154,10 @@ void checkLiveCount() {
 void workOutFadeDelay(long interval) {
   // fade levels are from 0 to 255 and back so the whole interval should be
   // divided into 255*2
-
-  fadeDelay = (interval * fadeAmount) / (255 * 2);
+  long delay = (interval * fadeAmount) / (255 * 2);
+  if ((delay > MIN_DELAY) && (delay < MAX_DELAY)) {
+    fadeDelay = delay;
+  }
 }
 
 void adjustBrightness() {
@@ -184,10 +189,10 @@ void debugToggleVisuals() {
   // } else {
   //   setPixelColor(0,   255, 255);
   // }
-  debugVisuals(debugToggle);
-  debugToggle = !debugToggle;
+  /*debugVisuals(debugToggle);
+  debugToggle = !debugToggle;*/
 }
 
 void debugVisuals(boolean on) {
-  // digitalWrite(PinLED, on ? HIGH : LOW);
+   digitalWrite(PinLED, on ? HIGH : LOW);
 }
