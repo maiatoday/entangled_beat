@@ -90,7 +90,7 @@ void sendData(byte type, byte address1, byte address2, byte data, unsigned long 
   // Serial.write(test);                       // IDX_INTERVAL1
   // Serial.write(test);                       // IDX_INTERVAL2
   // Serial.write(test);                       // IDX_INTERVAL3
-  Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
+  Serial.write(checksum_ACK & 0xFF);           // IDX_CHECKSUM
   Serial.flush();
 
   digitalWrite(RS485Control, RS485Receive); // Disable RS485 Transmit
@@ -125,7 +125,7 @@ void readLoop() {
         dataIndex          = 0;
         statePacketStarted = false;
 
-        if (data[IDX_CHECKSUM] == checksum) {
+        if (data[IDX_CHECKSUM] == (checksum&0xFF)) {
           debugCommsRx(false);
 
           // do we need to check the sender addr?
