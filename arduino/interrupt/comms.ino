@@ -142,8 +142,6 @@ void readLoop() {
             unsigned long data2 = charsToLong(b);
             dealWithPayload(data[IDX_PAYLOAD], data2);
 
-            /*dealWithPayload(data[IDX_PAYLOAD], 2140L);*/
-
             // if necessary send an ack here
           } // packet is for me
         }   // checksum() ok
@@ -186,14 +184,3 @@ unsigned long charsToLong(char *c) {
   return atol(s);
   // return atol("2140");
 }
-
-// void longToBytes(long l, byte *b) {
-//   b[0] = (byte)l & 0xFF;
-//   b[1] = (byte)((l >> 8) & 0xFF);
-//   b[2] = (byte)((l >> 16) & 0xFF);
-//   b[3] = (byte)((l >> 24) & 0xFF);
-// }
-//
-// long bytesToLong(byte b0, byte b1, byte b2, byte b3) {
-//   return (long)(b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-// }

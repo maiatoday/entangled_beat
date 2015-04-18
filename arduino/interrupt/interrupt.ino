@@ -43,6 +43,8 @@ int  indexInterval = 0;*/
 long lastInterval  = 0;
 int  fadeAmount    = 5;
 boolean showPulse  = false;
+#define MIN_DELAY 5
+#define MAX_DELAY 300
 
 // ---------------- Setup
 void setup() {
@@ -134,23 +136,11 @@ void rememberInterval(long interval) {
   debugToggleVisuals();
   showPulse = true;
   liveCount = MAX_LIVE_COUNT;
-
-
-  // remember the last MAX_INTERVALS intervals between pulses
-  // we don't use this yet but we can use it to get a better average
   lastInterval             = interval;
-  /*intervals[indexInterval] = interval;
-  indexInterval++;
-
-  if (indexInterval == MAX_INTERVALS) {
-    indexInterval = 0;
-  }*/
-/* just for debug
   if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
       (interval <= MAX_INTERVAL_LENGTH_MS)) {
     workOutFadeDelay(interval);
   }
-  */
 }
 
 void checkLiveCount() {
@@ -164,8 +154,10 @@ void checkLiveCount() {
 void workOutFadeDelay(long interval) {
   // fade levels are from 0 to 255 and back so the whole interval should be
   // divided into 255*2
-
-  fadeDelay = (interval * fadeAmount) / (255 * 2);
+  long delay = (interval * fadeAmount) / (255 * 2);
+  if ((delay > MIN_DELAY) && (delay < MAX_DELAY)) {
+    fadeDelay = delay;
+  }
 }
 
 void adjustBrightness() {
