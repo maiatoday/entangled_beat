@@ -126,8 +126,8 @@ void changeVisuals() {
 
 // -------------- Interval managment methods
 
-//MAX_LIVE_COUNT n cycles 255/5*
-#define MAX_LIVE_COUNT 255
+//MAX_LIVE_COUNT n cycles ((255*2)/5)*n
+#define MAX_LIVE_COUNT 310
 int liveCount = MAX_LIVE_COUNT;
 /** rememberInterval records the interval between beats.
  * It gets called when a packet with an interval  arrives
