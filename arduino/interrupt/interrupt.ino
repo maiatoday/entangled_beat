@@ -111,29 +111,28 @@ void pulseISR() {
 
 // --------------- Visual Methods
 void changeVisuals() {
-  debugVisuals(true);
   checkLiveCount();
 
   if (showPulse) {
-    setPixelColor(0, 10, brightness);
+    debugVisuals(true);
+    setPixelColor(0, brightness, brightness);
     adjustBrightness();
   } else {
-    setPixelColor(128, 0, 0);
+    debugVisuals(false);
+    setPixelColor(80, 0, 0);
   }
   delay(fadeDelay);
-  debugVisuals(false);
 }
 
 // -------------- Interval managment methods
 
-// #define MAX_DEATH_COUNT (MAX_INTERVAL_LENGTH_MS/fadeDelay)
-#define MAX_LIVE_COUNT 210
+//MAX_LIVE_COUNT n cycles 255/5*
+#define MAX_LIVE_COUNT 255
 int liveCount = MAX_LIVE_COUNT;
 /** rememberInterval records the interval between beats.
  * It gets called when a packet with an interval  arrives
  */
 void rememberInterval(long interval) {
-  debugToggleVisuals();
   showPulse = true;
   liveCount = MAX_LIVE_COUNT;
   lastInterval             = interval;
@@ -146,6 +145,7 @@ void rememberInterval(long interval) {
 void checkLiveCount() {
   if (liveCount <= 0) {
     showPulse = false;
+    workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
   } else {
     liveCount--;
   }
@@ -189,10 +189,10 @@ void debugToggleVisuals() {
   // } else {
   //   setPixelColor(0,   255, 255);
   // }
-  debugVisuals(debugToggle);
-  debugToggle = !debugToggle;
+  /*debugVisuals(debugToggle);
+  debugToggle = !debugToggle;*/
 }
 
 void debugVisuals(boolean on) {
-  // digitalWrite(PinLED, on ? HIGH : LOW);
+   digitalWrite(PinLED, on ? HIGH : LOW);
 }
