@@ -9,6 +9,7 @@
 #define IDX_INTERVAL3      7
 #define IDX_CHECKSUM       8
 #define MAX_PACKET_LENGTH  9
+
 /*#define IDX_CHECKSUM       4*/
 /*#define MAX_PACKET_LENGTH  5*/
 byte data[MAX_PACKET_LENGTH];
@@ -41,7 +42,7 @@ byte addr2hex(byte x) {
 }
 
 // --------------- Comms TX methods
-void sendMSG(byte address1, byte address2, byte data, long data2) {
+void sendMSG(byte address1, byte address2, byte data, unsigned long data2) {
   sendData(tENQ, addr2hex(address1), addr2hex(address2), data, data2);
 }
 
@@ -53,35 +54,42 @@ void sendNAK(byte address1, byte address2, byte data) {
   sendData(tNAK, address1, address2, data, 0L);
 }
 
-void sendData(byte type, byte address1, byte address2, byte data, long data2) {
+void sendData(byte type, byte address1, byte address2, byte data, unsigned long data2) {
   unsigned int checksum_ACK;
-  /*byte b[4];
-  longToBytes(data2, b);*/
+  char b[5];
 
-  byte test = 0x01;
-  checksum_ACK = address1 + address2 + data + test + test + test + test ;
+  longToChar(data2, b);
+
+  // char test = '1';
+
+  // checksum_ACK = address1 + address2 + data + test + test + test + test;
+  checksum_ACK = address1 + address2 + data + b[0] + b[1] + b[2] + b[3];
+
   /*checksum_ACK = address1 + address2 + data ;*/
+
   /*for (int i = 0; i<4; i++) {
-    checksum_ACK += b[i];
-    }*/
+     checksum_ACK += b[i];
+     }*/
 
   digitalWrite(RS485Control, RS485Transmit); // Enable RS485 Transmit
 
   delay(1);
 
-  Serial.write(0);                          // IDX_START_BYTE
-  Serial.write(address1);                   // IDX_ADDR_SENDER
-  Serial.write(address2);                   // IDX_ADDR_RECEIVER
-  Serial.write(data);                       // IDX_PAYLOAD
+  Serial.write(0);        // IDX_START_BYTE
+  Serial.write(address1); // IDX_ADDR_SENDER
+  Serial.write(address2); // IDX_ADDR_RECEIVER
+  Serial.write(data);     // IDX_PAYLOAD
+
   /*Serial.write(b, 4);                       // IDX_INTERVAL0*/
-  /*Serial.write(b[0]);                       // IDX_INTERVAL0
-  Serial.write(b[1]);                       // IDX_INTERVAL1
-  Serial.write(b[2]);                       // IDX_INTERVAL2
-  Serial.write(b[3]);                       // IDX_INTERVAL3*/
-  Serial.write(test);                       // IDX_INTERVAL0
-  Serial.write(test);                       // IDX_INTERVAL1
-  Serial.write(test);                       // IDX_INTERVAL2
-  Serial.write(test);                       // IDX_INTERVAL3
+
+  Serial.write(b[0]); // IDX_INTERVAL0
+  Serial.write(b[1]); // IDX_INTERVAL1
+  Serial.write(b[2]); // IDX_INTERVAL2
+  Serial.write(b[3]); // IDX_INTERVAL3
+  // Serial.write(test);                       // IDX_INTERVAL0
+  // Serial.write(test);                       // IDX_INTERVAL1
+  // Serial.write(test);                       // IDX_INTERVAL2
+  // Serial.write(test);                       // IDX_INTERVAL3
   Serial.write(((checksum_ACK) & 255));     // IDX_CHECKSUM
   Serial.flush();
 
@@ -124,33 +132,68 @@ void readLoop() {
           address = hex2addr(data[IDX_ADDR_RECEIVER]);
 
           if ((address == myID) || (address == ADDR_BROADCAST)) {
-            /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
-            dealWithPayload(data[IDX_PAYLOAD], data2);*/
-            dealWithPayload(data[IDX_PAYLOAD], 2140L);
+            /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1],
+               data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
+               dealWithPayload(data[IDX_PAYLOAD], data2);*/
+            char b[5] =
+            { data[IDX_INTERVAL0], data[IDX_INTERVAL1], data[IDX_INTERVAL2],
+              data[IDX_INTERVAL3], 0 };
+
+            unsigned long data2 = charsToLong(b);
+            dealWithPayload(data[IDX_PAYLOAD], data2);
+
+            /*dealWithPayload(data[IDX_PAYLOAD], 2140L);*/
 
             // if necessary send an ack here
           } // packet is for me
         }   // checksum() ok
       }     // end of packet
     }       // not start byte
-  }                            // while
+  } // while
 }
 
 void dealWithPayload(byte payload, long data2) {
   if (payload == 'P') {
-    //long now = millis();
     rememberInterval(data2);
-    //lastPulseMessageTime = now;
   }
 }
 
-void longToBytes(long l, byte* b) {
-  b[0] = (byte) l & 0xFF;
-  b[1] = (byte) ((l >> 8) & 0xFF);
-  b[2] = (byte) ((l >> 16) & 0xFF);
-  b[3] = (byte) ((l >> 24) & 0xFF);
+//** very very fragile !! wants a buffer of 5 bytes long!
+void longToChar(unsigned long l, char *b) {
+  if (l <= 9) {
+    b[0] = ' ';
+    b[1] = ' ';
+    b[2] = ' ';
+    ltoa(l,                      &b[3], 10);
+  } else if (l <= 99) {
+    b[0] = ' ';
+    b[1] = ' ';
+    ltoa(l,                      &b[2], 10);
+  } else if (l <= 999) {
+    b[0] = ' ';
+    ltoa(l,                      &b[1], 10);
+  } else if (l <= 9999) {
+    ltoa(l,                      b, 10);
+  } else {
+    ltoa(MAX_INTERVAL_LENGTH_MS, b, 10);
+  }
 }
 
-long bytesToLong(byte b0, byte b1, byte b2, byte b3) {
-  return (long) (b3<<24) | (b2<<16) | (b1<<8) | b0;
+//** very very fragile !! wants a buffer of 5 bytes long!
+unsigned long charsToLong(char *c) {
+  char s[5] = { c[0], c[1], c[2], c[3], 0 };
+
+  return atol(s);
+  // return atol("2140");
 }
+
+// void longToBytes(long l, byte *b) {
+//   b[0] = (byte)l & 0xFF;
+//   b[1] = (byte)((l >> 8) & 0xFF);
+//   b[2] = (byte)((l >> 16) & 0xFF);
+//   b[3] = (byte)((l >> 24) & 0xFF);
+// }
+//
+// long bytesToLong(byte b0, byte b1, byte b2, byte b3) {
+//   return (long)(b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
+// }

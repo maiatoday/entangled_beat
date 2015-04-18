@@ -38,8 +38,8 @@ byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
 #define  MAX_INTERVALS 5
-long intervals[MAX_INTERVALS];
-int  indexInterval = 0;
+/*long intervals[MAX_INTERVALS];
+int  indexInterval = 0;*/
 long lastInterval  = 0;
 int  fadeAmount    = 5;
 boolean showPulse  = false;
@@ -102,7 +102,7 @@ void checkSend() {
 void pulseISR() {
 
   long now = millis();
-  pulseInterval = lastPulseMessageTime - now;
+  pulseInterval = now - lastPulseMessageTime;
   lastPulseMessageTime = now;
   gotPulse = true;
 }
@@ -139,12 +139,12 @@ void rememberInterval(long interval) {
   // remember the last MAX_INTERVALS intervals between pulses
   // we don't use this yet but we can use it to get a better average
   lastInterval             = interval;
-  intervals[indexInterval] = interval;
+  /*intervals[indexInterval] = interval;
   indexInterval++;
 
   if (indexInterval == MAX_INTERVALS) {
     indexInterval = 0;
-  }
+  }*/
 /* just for debug
   if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
       (interval <= MAX_INTERVAL_LENGTH_MS)) {
