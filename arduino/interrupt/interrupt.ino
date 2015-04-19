@@ -176,7 +176,7 @@ void changeVisuals() {
       setPixelColor(0, brightness, brightness);
     }
     else {
-      setPixelColor(0, 0, brightness);
+      setPixelColor(0, brightness, 0);
     }
 
     adjustBrightness();
