@@ -46,6 +46,8 @@ boolean showPulse  = false;
 #define MIN_DELAY 5
 #define MAX_DELAY 300
 
+boolean standalone = false;
+
 // ---------------- Setup
 void setup() {
   // setup Input pin and Interrupt
@@ -77,6 +79,9 @@ void setup() {
   myID = 0;
   myID = myID + !digitalRead(PinADDR0);
   myID = myID + 2 * !digitalRead(PinADDR1);
+  if (myID == 0) {
+    standalone = true;
+  }
 
   toID = 0;
   toID = toID + !digitalRead(PinADDR2);
@@ -88,16 +93,20 @@ void setup() {
 // ---------- Loop
 void loop() {
   checkSend();
-  readLoop();
+  if (!standalone) {readLoop();}
   changeVisuals();
 }
 
 void checkSend() {
   if (gotPulse) {
-    debugCommsTx(true);
     gotPulse = false;
-    sendMSG(myID, toID, 'P', pulseInterval);
-    debugCommsTx(false);
+    if (standalone) {
+      rememberInterval(pulseInterval);
+    } else {
+      debugCommsTx(true);
+      sendMSG(myID, toID, 'P', pulseInterval);
+      debugCommsTx(false);
+    }
   }
 }
 
