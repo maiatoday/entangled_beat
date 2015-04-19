@@ -8,7 +8,7 @@
 #define PinLED           13
 #define mybaud           9600
 
-//new pins
+// new pins
 #define PinISR               8
 #define ledB                 3
 #define ledG                 5
@@ -31,7 +31,8 @@ long fadeDelay  = 30;
 byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
-//#define  MAX_INTERVALS 5
+
+// #define  MAX_INTERVALS 5
 
 /*long intervals[MAX_INTERVALS];
    int  indexInterval = 0;*/
@@ -49,11 +50,11 @@ void setup() {
   // setup Input pin and Interrupt
   pinMode(PinISR, INPUT_PULLUP);
   PCintPort::attachInterrupt(PinISR, pulseISR, CHANGE); // attach a PinChange
-                                                           // Interrupt to our
-                                                           // pin CHANGE means
-                                                           // any level change
-                                                           // triggers an
-                                                           // interrupt
+                                                        // Interrupt to our
+                                                        // pin CHANGE means
+                                                        // any level change
+                                                        // triggers an
+                                                        // interrupt
 
   gotPulse = false;
 
@@ -63,9 +64,9 @@ void setup() {
 
   Serial.begin(mybaud);
 
-  pinMode(ledB,     OUTPUT);
-  pinMode(ledR,     OUTPUT);
-  pinMode(ledG,     OUTPUT);
+  pinMode(ledB,       OUTPUT);
+  pinMode(ledR,       OUTPUT);
+  pinMode(ledG,       OUTPUT);
 
   pinMode(PinToADDR0, INPUT_PULLUP);
   pinMode(PinToADDR1, INPUT_PULLUP);
@@ -77,6 +78,7 @@ void setup() {
   myID = 0;
   myID = myID + !digitalRead(PinToADDR0);
   myID = myID + 2 * !digitalRead(PinToADDR1);
+
   if (myID == 0) {
     standalone = true;
   }
@@ -85,49 +87,50 @@ void setup() {
   lastPulseMessageTime = millis();
 }
 
-  /*
-void setupOldPins() {
-  // setup Input pin and Interrupt
-  pinMode(PinINPUT0, INPUT_PULLUP);
-  PCintPort::attachInterrupt(PinINPUT0, pulseISR, CHANGE); // attach a PinChange
-                                                           // Interrupt to our
-                                                           // pin CHANGE means
-                                                           // any level change
-                                                           // triggers an
-                                                           // interrupt
+/*
+   void setupOldPins() {
+   // setup Input pin and Interrupt
+   pinMode(PinINPUT0, INPUT_PULLUP);
+   PCintPort::attachInterrupt(PinINPUT0, pulseISR, CHANGE); // attach a
+      PinChange
+                                                         // Interrupt to our
+                                                         // pin CHANGE means
+                                                         // any level change
+                                                         // triggers an
+                                                         // interrupt
 
-  gotPulse = false;
+   gotPulse = false;
 
-  pinMode(PinLED,       OUTPUT);
-  pinMode(RS485Control, OUTPUT);
-  digitalWrite(RS485Control, RS485Receive);
+   pinMode(PinLED,       OUTPUT);
+   pinMode(RS485Control, OUTPUT);
+   digitalWrite(RS485Control, RS485Receive);
 
-  Serial.begin(mybaud);
+   Serial.begin(mybaud);
 
-  pinMode(ledB,     OUTPUT);
-  pinMode(ledR,     OUTPUT);
-  pinMode(ledG,     OUTPUT);
+   pinMode(ledB,     OUTPUT);
+   pinMode(ledR,     OUTPUT);
+   pinMode(ledG,     OUTPUT);
 
-  pinMode(PinADDR0, INPUT_PULLUP);
-  pinMode(PinADDR1, INPUT_PULLUP);
-  pinMode(PinADDR2, INPUT_PULLUP);
-  pinMode(PinADDR3, INPUT_PULLUP);
+   pinMode(PinADDR0, INPUT_PULLUP);
+   pinMode(PinADDR1, INPUT_PULLUP);
+   pinMode(PinADDR2, INPUT_PULLUP);
+   pinMode(PinADDR3, INPUT_PULLUP);
 
-  myID = 0;
-  myID = myID + !digitalRead(PinADDR0);
-  myID = myID + 2 * !digitalRead(PinADDR1);
+   myID = 0;
+   myID = myID + !digitalRead(PinADDR0);
+   myID = myID + 2 * !digitalRead(PinADDR1);
 
-  if (myID == 0) {
-    standalone = true;
-  }
+   if (myID == 0) {
+   standalone = true;
+   }
 
-  toID = 0;
-  toID = toID + !digitalRead(PinADDR2);
-  toID = toID + 2 * !digitalRead(PinADDR3);
-  workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
-  lastPulseMessageTime = millis();
-}
-*/
+   toID = 0;
+   toID = toID + !digitalRead(PinADDR2);
+   toID = toID + 2 * !digitalRead(PinADDR3);
+   workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
+   lastPulseMessageTime = millis();
+   }
+ */
 
 // ---------- Loop
 void loop() {
@@ -168,10 +171,10 @@ void changeVisuals() {
     debugVisuals(true);
 
     if (inSync) {
-      setPixelColor(brightness, brightness, brightness);
+      setPixelColor(0, brightness, brightness);
     }
     else {
-      setPixelColor(0,          brightness, brightness);
+      setPixelColor(0, 0, brightness);
     }
 
     adjustBrightness();
@@ -224,6 +227,7 @@ void workOutFadeDelay(long interval) {
 
 void adjustBrightness() {
   brightness = brightness + fadeAmount;
+
   if ((brightness == 0) || (brightness == 255)) {
     fadeAmount = -fadeAmount;
   }
