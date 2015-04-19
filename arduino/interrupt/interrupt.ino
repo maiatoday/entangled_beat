@@ -28,8 +28,9 @@ byte toID;
 
 volatile boolean gotPulse = false;
 
-volatile long lastPulseMessageTime = 0; // last time an incoming pulse message was
-                               // received
+volatile long lastPulseMessageTime = 0; // last time an incoming pulse message
+                                        // was
+// received
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
@@ -38,15 +39,17 @@ byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
 #define  MAX_INTERVALS 5
+
 /*long intervals[MAX_INTERVALS];
-int  indexInterval = 0;*/
-long lastInterval  = 0;
-int  fadeAmount    = 5;
-boolean showPulse  = false;
+   int  indexInterval = 0;*/
+long lastInterval = 0;
+int  fadeAmount   = 5;
+boolean showPulse = false;
 #define MIN_DELAY 5
 #define MAX_DELAY 300
 
-boolean standalone = false;
+boolean standalone      = false;
+volatile boolean inSync = false;
 
 // ---------------- Setup
 void setup() {
@@ -79,6 +82,7 @@ void setup() {
   myID = 0;
   myID = myID + !digitalRead(PinADDR0);
   myID = myID + 2 * !digitalRead(PinADDR1);
+
   if (myID == 0) {
     standalone = true;
   }
@@ -93,13 +97,15 @@ void setup() {
 // ---------- Loop
 void loop() {
   checkSend();
-  if (!standalone) {readLoop();}
-  changeVisuals();
+
+  if (!standalone) readLoop(); changeVisuals();
 }
 
 void checkSend() {
   if (gotPulse) {
     gotPulse = false;
+    detectSync();
+
     if (standalone) {
       rememberInterval(pulseInterval);
     } else {
@@ -111,11 +117,12 @@ void checkSend() {
 }
 
 void pulseISR() {
-
   long now = millis();
-  pulseInterval = now - lastPulseMessageTime;
+
+  pulseInterval        = now - lastPulseMessageTime;
   lastPulseMessageTime = now;
-  gotPulse = true;
+  gotPulse             = true;
+  detectSync();
 }
 
 // --------------- Visual Methods
@@ -124,7 +131,14 @@ void changeVisuals() {
 
   if (showPulse) {
     debugVisuals(true);
-    setPixelColor(0, brightness, brightness);
+
+    if (inSync) {
+      setPixelColor(brightness, brightness, brightness);
+    }
+    else {
+      setPixelColor(0,          brightness, brightness);
+    }
+
     adjustBrightness();
   } else {
     debugVisuals(false);
@@ -135,18 +149,19 @@ void changeVisuals() {
 
 // -------------- Interval managment methods
 
-//MAX_LIVE_COUNT n cycles ((255*2)/5)*n
+// MAX_LIVE_COUNT n cycles ((255*2)/5)*n
 #define MAX_LIVE_COUNT 310
 int liveCount = MAX_LIVE_COUNT;
+
 /** rememberInterval records the interval between beats.
  * It gets called when a packet with an interval  arrives
  */
 void rememberInterval(long interval) {
-  showPulse = true;
-  liveCount = MAX_LIVE_COUNT;
-  lastInterval             = interval;
-  if ((MIN_INTERVAL_LENGTH_MS <= interval) &&
-      (interval <= MAX_INTERVAL_LENGTH_MS)) {
+  showPulse    = true;
+  liveCount    = MAX_LIVE_COUNT;
+  lastInterval = interval;
+
+  if (intervalInRange(interval)) {
     workOutFadeDelay(interval);
   }
 }
@@ -155,6 +170,8 @@ void checkLiveCount() {
   if (liveCount <= 0) {
     showPulse = false;
     workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
+    inSync = false;
+    debugSync(false);
   } else {
     liveCount--;
   }
@@ -164,6 +181,7 @@ void workOutFadeDelay(long interval) {
   // fade levels are from 0 to 255 and back so the whole interval should be
   // divided into 255*2
   long delay = (interval * fadeAmount) / (255 * 2);
+
   if ((delay > MIN_DELAY) && (delay < MAX_DELAY)) {
     fadeDelay = delay;
   }
@@ -171,10 +189,31 @@ void workOutFadeDelay(long interval) {
 
 void adjustBrightness() {
   brightness = brightness + fadeAmount;
-
   if ((brightness == 0) || (brightness == 255)) {
     fadeAmount = -fadeAmount;
   }
+}
+
+#define SYNC_THRESHOLD_MS 100
+
+void detectSync() {
+  if (intervalInRange(lastInterval) &&
+      intervalInRange(pulseInterval)) {
+    if (abs(lastInterval - pulseInterval) < SYNC_THRESHOLD_MS) {
+      inSync = true;
+    } else {
+      inSync = false;
+    }
+  }
+  debugSync(inSync);
+}
+
+boolean intervalInRange(unsigned long i) {
+  if ((MIN_INTERVAL_LENGTH_MS <= i) &&
+      (i <= MAX_INTERVAL_LENGTH_MS)) {
+    return true;
+  }
+  return false;
 }
 
 // -------------- Debug methods
@@ -198,10 +237,15 @@ void debugToggleVisuals() {
   // } else {
   //   setPixelColor(0,   255, 255);
   // }
+
   /*debugVisuals(debugToggle);
-  debugToggle = !debugToggle;*/
+     debugToggle = !debugToggle;*/
 }
 
 void debugVisuals(boolean on) {
-   digitalWrite(PinLED, on ? HIGH : LOW);
+  // digitalWrite(PinLED, on ? HIGH : LOW);
+}
+
+void debugSync(boolean on) {
+  digitalWrite(PinLED, on ? HIGH : LOW);
 }
