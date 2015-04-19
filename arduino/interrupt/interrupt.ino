@@ -34,7 +34,7 @@ volatile long lastPulseMessageTime = 0; // last time an incoming pulse message
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
-#define MAX_BRGHTNESS 255
+#define MAX_BRIGHTNESS 255
 #define FADE_AMOUNT (-5)
 long fadeDelay  = 30;
 #define MAX_INTERVAL_LENGTH_MS 2140
@@ -44,7 +44,7 @@ long fadeDelay  = 30;
 /*long intervals[MAX_INTERVALS];
    int  indexInterval = 0;*/
 long lastInterval = 0;
-byte brightness = MAX_BRGHTNESS;
+byte brightness = MAX_BRIGHTNESS;
 int  fadeAmount   = FADE_AMOUNT;
 boolean showPulse = false;
 #define MIN_DELAY 5
