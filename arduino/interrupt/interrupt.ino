@@ -27,8 +27,9 @@ volatile long lastPulseMessageTime = 0; // last time an incoming pulse message
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
+#define MAX_BRGHTNESS 255
+#define FADE_AMOUNT (-5)
 long fadeDelay  = 30;
-byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
 
@@ -37,7 +38,8 @@ byte brightness = 0;
 /*long intervals[MAX_INTERVALS];
    int  indexInterval = 0;*/
 long lastInterval = 0;
-int  fadeAmount   = 5;
+byte brightness = MAX_BRGHTNESS;
+int  fadeAmount   = FADE_AMOUNT;
 boolean showPulse = false;
 #define MIN_DELAY 5
 #define MAX_DELAY 300
@@ -209,6 +211,8 @@ void checkLiveCount() {
     showPulse = false;
     workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
     inSync = false;
+    brightness = MAX_BRIGHTNESS;
+    fadeAmount = FADE_AMOUNT;
     debugSync(false);
   } else {
     liveCount--;
