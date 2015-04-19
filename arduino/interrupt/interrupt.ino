@@ -38,7 +38,7 @@ long fadeDelay  = 30;
 byte brightness = 0;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
-#define  MAX_INTERVALS 5
+//#define  MAX_INTERVALS 5
 
 /*long intervals[MAX_INTERVALS];
    int  indexInterval = 0;*/
