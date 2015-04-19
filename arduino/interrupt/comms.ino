@@ -128,10 +128,10 @@ void readLoop() {
         if (data[IDX_CHECKSUM] == (checksum&0xFF)) {
           debugCommsRx(false);
 
-          // do we need to check the sender addr?
-          address = hex2addr(data[IDX_ADDR_RECEIVER]);
+          // for the new pin setup we only check if the sender is not me
+          address = hex2addr(data[IDX_ADDR_SENDER]);
 
-          if ((address == myID) || (address == ADDR_BROADCAST)) {
+          if ((address != myID) || (address == ADDR_BROADCAST)) {
             /*long data2 = bytesToLong(data[IDX_INTERVAL0], data[IDX_INTERVAL1],
                data[IDX_INTERVAL2], data[IDX_INTERVAL3]);
                dealWithPayload(data[IDX_PAYLOAD], data2);*/
