@@ -16,6 +16,8 @@
 #define PinToADDR0           2
 #define PinToADDR1           4
 
+#define PinPowerSensor       7
+
 byte myID;
 byte toID;
 
@@ -59,6 +61,10 @@ void setup() {
                                                         // interrupt
 
   gotPulse = false;
+
+  //Switch on the heart rate sensor
+  pinMode(PinPowerSensor, OUTPUT);
+  digitalWrite(PinPowerSensor, HIGH);
 
   pinMode(PinLED,       OUTPUT);
   pinMode(RS485Control, OUTPUT);
