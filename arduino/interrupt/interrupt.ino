@@ -9,14 +9,14 @@
 #define mybaud           9600
 
 // new pins
-#define PinISR               8
+#define PinISR               7
 #define ledB                 3
 #define ledG                 5
 #define ledR                 9
 #define PinToADDR0           2
 #define PinToADDR1           4
 
-#define PinPowerSensor       7
+#define PinPowerSensor       8
 
 byte myID;
 byte toID;
