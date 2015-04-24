@@ -29,8 +29,11 @@ volatile long lastPulseMessageTime = 0; // last time an incoming pulse message
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
-#define MAX_BRIGHTNESS 255
-#define FADE_AMOUNT (-5)
+/*#define MAX_BRIGHTNESS 255
+#define FADE_AMOUNT (-5)*/
+#define NONE_BRIGHTNESS 80
+#define MAX_BRIGHTNESS 153
+#define FADE_AMOUNT (-3)
 long fadeDelay  = 30;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
@@ -188,7 +191,7 @@ void changeVisuals() {
     adjustBrightness();
   } else {
     debugVisuals(false);
-    setPixelColor(80, 0, 0);
+    setPixelColor(NONE_BRIGHTNESS, 0, 0);
   }
   delay(fadeDelay);
 }
@@ -228,7 +231,7 @@ void checkLiveCount() {
 void workOutFadeDelay(long interval) {
   // fade levels are from 0 to 255 and back so the whole interval should be
   // divided into 255*2
-  long delay = (interval * fadeAmount) / (255 * 2);
+  long delay = (interval * fadeAmount) / (MAX_BRIGHTNESS * 2);
 
   if ((delay > MIN_DELAY) && (delay < MAX_DELAY)) {
     fadeDelay = delay;
@@ -238,7 +241,7 @@ void workOutFadeDelay(long interval) {
 void adjustBrightness() {
   brightness = brightness + fadeAmount;
 
-  if ((brightness == 0) || (brightness == 255)) {
+  if ((brightness == 0) || (brightness == MAX_BRIGHTNESS)) {
     fadeAmount = -fadeAmount;
   }
 }
