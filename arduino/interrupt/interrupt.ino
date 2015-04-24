@@ -292,6 +292,7 @@ boolean noFeedback() {
   }
   previousPeakDiffTime = peakDiffTime;
   debugFeedback(feedback);
+  debugFeedbackTime(peakDiffTime);
   return feedback;
 }
 
@@ -331,4 +332,10 @@ void debugSync(boolean on) {
 
 void debugFeedback(boolean on) {
   digitalWrite(PinLED, on ? HIGH : LOW);
+}
+
+void debugFeedbackTime(unsigned long l) {
+  if (standalone) {
+    sendMSG(myID, toID, 'P', l);
+  }
 }
