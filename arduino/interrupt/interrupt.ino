@@ -23,7 +23,7 @@ byte toID;
 
 volatile boolean gotPulse = false;
 
-volatile long lastPulseMessageTime = 0; // last time an incoming pulse message
+volatile long lastPulseTime = 0; // last time an incoming pulse message
                                         // was
 // received
 volatile long pulseInterval = 0;
@@ -95,7 +95,7 @@ void setup() {
   }
 
   workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
-  lastPulseMessageTime = millis();
+  lastPulseTime = millis();
 }
 
 /*
@@ -139,7 +139,7 @@ void setup() {
    toID = toID + !digitalRead(PinADDR2);
    toID = toID + 2 * !digitalRead(PinADDR3);
    workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
-   lastPulseMessageTime = millis();
+   lastPulseTime = millis();
    }
  */
 
@@ -155,12 +155,16 @@ void checkSend() {
     gotPulse = false;
     detectSync();
 
-    if (standalone) {
-      rememberInterval(pulseInterval);
+    if (noFeedback()) {
+      if (standalone) {
+        rememberInterval(pulseInterval);
+      } else {
+        debugCommsTx(true);
+        sendMSG(myID, toID, 'P', pulseInterval);
+        debugCommsTx(false);
+      }
     } else {
-      debugCommsTx(true);
-      sendMSG(myID, toID, 'P', pulseInterval);
-      debugCommsTx(false);
+      switchOff();
     }
   }
 }
@@ -168,9 +172,9 @@ void checkSend() {
 void pulseISR() {
   long now = millis();
 
-  pulseInterval        = now - lastPulseMessageTime;
-  lastPulseMessageTime = now;
-  gotPulse             = true;
+  pulseInterval = now - lastPulseTime;
+  lastPulseTime = now;
+  gotPulse      = true;
   detectSync();
 }
 
@@ -217,15 +221,19 @@ void rememberInterval(long interval) {
 
 void checkLiveCount() {
   if (liveCount <= 0) {
-    showPulse = false;
-    workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
-    inSync = false;
-    brightness = MAX_BRIGHTNESS;
-    fadeAmount = FADE_AMOUNT;
-    debugSync(false);
+    switchOff();
   } else {
     liveCount--;
   }
+}
+
+void switchOff() {
+  showPulse = false;
+  workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
+  inSync = false;
+  brightness = MAX_BRIGHTNESS;
+  fadeAmount = FADE_AMOUNT;
+  debugSync(false);
 }
 
 void workOutFadeDelay(long interval) {
@@ -238,7 +246,11 @@ void workOutFadeDelay(long interval) {
   }
 }
 
+long brightTime = 0;
 void adjustBrightness() {
+  if (brightness == MAX_BRIGHTNESS) {
+    brightTime = millis();
+  }
   brightness = brightness + fadeAmount;
 
   if ((brightness == 0) || (brightness == MAX_BRIGHTNESS)) {
@@ -266,6 +278,21 @@ boolean intervalInRange(unsigned long i) {
     return true;
   }
   return false;
+}
+
+// -------------- feedback methods
+#define PEAK_DIFF 20
+long peakDiffTime = 0;
+long previousPeakDiffTime = 0;
+boolean noFeedback() {
+  boolean feedback = false;
+  peakDiffTime = abs(lastPulseTime - brightTime);
+  if (abs(previousPeakDiffTime - peakDiffTime) < PEAK_DIFF) {
+    feedback = true;
+  }
+  previousPeakDiffTime = peakDiffTime;
+  debugFeedback(feedback);
+  return feedback;
 }
 
 // -------------- Debug methods
@@ -299,5 +326,9 @@ void debugVisuals(boolean on) {
 }
 
 void debugSync(boolean on) {
+  //digitalWrite(PinLED, on ? HIGH : LOW);
+}
+
+void debugFeedback(boolean on) {
   digitalWrite(PinLED, on ? HIGH : LOW);
 }
