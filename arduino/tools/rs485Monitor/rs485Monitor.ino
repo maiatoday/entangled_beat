@@ -184,6 +184,7 @@ void dealWithPayload(byte payload, long data2) {
 
   if (payload == 'P' ) {
     Serial.print(" pulse   ms: ");
+    if (!intervalInRange(data2)) Serial.print(" x");
   } else if (payload == 'B') {
     Serial.print(" bright  ms: ");
   } else {
@@ -233,7 +234,7 @@ unsigned long charsToLong(char *c) {
 #define SYNC_THRESHOLD_MS 100
 
 #define MAX_INTERVAL_LENGTH_MS 2140
-#define MIN_INTERVAL_LENGTH_MS 200
+#define MIN_INTERVAL_LENGTH_MS 300
 
 void detectSync() {
   if (intervalInRange(lastInterval) &&

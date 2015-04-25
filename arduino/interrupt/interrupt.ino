@@ -27,6 +27,7 @@ volatile long lastPulseTime = 0; // last time an incoming pulse message
 // was
 // received
 volatile long pulseInterval = 0;
+volatile long prevPulseInterval = 0;
 
 // -------------- Interval managment properties
 
@@ -37,7 +38,7 @@ volatile long pulseInterval = 0;
 #define FADE_AMOUNT (-3)
 long fadeDelay = 30;
 #define MAX_INTERVAL_LENGTH_MS 2140
-#define MIN_INTERVAL_LENGTH_MS 200
+#define MIN_INTERVAL_LENGTH_MS 300
 
 // #define  MAX_INTERVALS 5
 
@@ -159,7 +160,7 @@ void checkSend() {
 
     noFeedback();
 
-    // if (noFeedback()) {
+   if (goodData()) {
     if (standalone) {
       rememberInterval(pulseInterval);
     } else {
@@ -167,20 +168,25 @@ void checkSend() {
       sendMSG(myID, toID, 'P', pulseInterval);
       debugCommsTx(false);
     }
+  }
 
-    //  } else {
-    //    switchOff();
-    //  }
   }
 }
 
 void pulseISR() {
   long now = millis();
-
+  prevPulseInterval = pulseInterval;
   pulseInterval = now - lastPulseTime;
   lastPulseTime = now;
   gotPulse      = true;
   detectSync();
+}
+
+boolean goodData() {
+  if (abs(prevPulseInterval - pulseInterval) < 50) {
+    return true;
+  }
+  return false;
 }
 
 // --------------- Visual Methods
