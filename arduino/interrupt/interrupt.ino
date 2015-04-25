@@ -24,17 +24,18 @@ byte toID;
 volatile boolean gotPulse = false;
 
 volatile long lastPulseTime = 0; // last time an incoming pulse message
-                                        // was
+// was
 // received
 volatile long pulseInterval = 0;
 
 // -------------- Interval managment properties
+
 /*#define MAX_BRIGHTNESS 255
-#define FADE_AMOUNT (-5)*/
-#define NONE_BRIGHTNESS 80
+ #define FADE_AMOUNT (-5)*/
+#define NONE_BRIGHTNESS 40
 #define MAX_BRIGHTNESS 153
 #define FADE_AMOUNT (-3)
-long fadeDelay  = 30;
+long fadeDelay = 30;
 #define MAX_INTERVAL_LENGTH_MS 2140
 #define MIN_INTERVAL_LENGTH_MS 200
 
@@ -43,7 +44,7 @@ long fadeDelay  = 30;
 /*long intervals[MAX_INTERVALS];
    int  indexInterval = 0;*/
 long lastInterval = 0;
-byte brightness = MAX_BRIGHTNESS;
+byte brightness   = MAX_BRIGHTNESS;
 int  fadeAmount   = FADE_AMOUNT;
 boolean showPulse = false;
 #define MIN_DELAY 5
@@ -65,7 +66,7 @@ void setup() {
 
   gotPulse = false;
 
-  //Switch on the heart rate sensor
+  // Switch on the heart rate sensor
   pinMode(PinPowerSensor, OUTPUT);
   digitalWrite(PinPowerSensor, HIGH);
 
@@ -147,7 +148,8 @@ void setup() {
 void loop() {
   checkSend();
 
-  if (!standalone) readLoop(); changeVisuals();
+  if (!standalone) readLoop();
+  changeVisuals();
 }
 
 void checkSend() {
@@ -155,17 +157,20 @@ void checkSend() {
     gotPulse = false;
     detectSync();
 
-    if (noFeedback()) {
-      if (standalone) {
-        rememberInterval(pulseInterval);
-      } else {
-        debugCommsTx(true);
-        sendMSG(myID, toID, 'P', pulseInterval);
-        debugCommsTx(false);
-      }
+    noFeedback();
+
+    // if (noFeedback()) {
+    if (standalone) {
+      rememberInterval(pulseInterval);
     } else {
-      switchOff();
+      debugCommsTx(true);
+      sendMSG(myID, toID, 'P', pulseInterval);
+      debugCommsTx(false);
     }
+
+    //  } else {
+    //    switchOff();
+    //  }
   }
 }
 
@@ -197,6 +202,8 @@ void changeVisuals() {
     debugVisuals(false);
     setPixelColor(NONE_BRIGHTNESS, 0, 0);
   }
+
+  // debugFeedbackTime(fadeDelay);
   delay(fadeDelay);
 }
 
@@ -230,7 +237,7 @@ void checkLiveCount() {
 void switchOff() {
   showPulse = false;
   workOutFadeDelay(MAX_INTERVAL_LENGTH_MS);
-  inSync = false;
+  inSync     = false;
   brightness = MAX_BRIGHTNESS;
   fadeAmount = FADE_AMOUNT;
   debugSync(false);
@@ -247,9 +254,13 @@ void workOutFadeDelay(long interval) {
 }
 
 long brightTime = 0;
+long lastBrightTime = 0;
+long brightInterval = 0;
 void adjustBrightness() {
   if (brightness == MAX_BRIGHTNESS) {
+    lastBrightTime = brightTime;
     brightTime = millis();
+    brightInterval = brightTime - lastBrightTime;
   }
   brightness = brightness + fadeAmount;
 
@@ -282,17 +293,20 @@ boolean intervalInRange(unsigned long i) {
 
 // -------------- feedback methods
 #define PEAK_DIFF 20
-long peakDiffTime = 0;
+long peakDiffTime         = 0;
 long previousPeakDiffTime = 0;
 boolean noFeedback() {
   boolean feedback = false;
+
   peakDiffTime = abs(lastPulseTime - brightTime);
+
   if (abs(previousPeakDiffTime - peakDiffTime) < PEAK_DIFF) {
     feedback = true;
   }
   previousPeakDiffTime = peakDiffTime;
   debugFeedback(feedback);
-  debugFeedbackTime(peakDiffTime);
+  debugFeedbackTime('P', pulseInterval);
+  debugFeedbackTime('B', brightInterval);
   return feedback;
 }
 
@@ -327,15 +341,15 @@ void debugVisuals(boolean on) {
 }
 
 void debugSync(boolean on) {
-  //digitalWrite(PinLED, on ? HIGH : LOW);
+  // digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
 void debugFeedback(boolean on) {
   digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
-void debugFeedbackTime(unsigned long l) {
+void debugFeedbackTime(char c, unsigned long l) {
   if (standalone) {
-    sendMSG(myID, toID, 'P', l);
+    sendMSG(myID, toID, c, l);
   }
 }

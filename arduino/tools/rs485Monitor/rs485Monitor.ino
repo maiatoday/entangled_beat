@@ -176,13 +176,26 @@ void loop() /****** LOOP: RUNS CONSTANTLY ******/
   }
 } // --(end main loop )---
 
+unsigned long pulseInterval = 0;
+unsigned long lastInterval = 0;
+boolean inSync = false;
+
 void dealWithPayload(byte payload, long data2) {
-  if (payload == 'P') {
-    char dd[5];
-    longToChar(data2, dd);
+
+  if (payload == 'P' ) {
+    Serial.print(" pulse   ms: ");
+  } else if (payload == 'B') {
+    Serial.print(" bright  ms: ");
+  } else {
     Serial.print(" payload ms: ");
-    Serial.println(dd);
   }
+  char dd[5];
+  longToChar(data2, dd);
+  Serial.print(dd);
+  pulseInterval = data2;
+  //detectSync();
+  lastInterval = pulseInterval;
+  Serial.println("");
 }
 
 void longToChar(unsigned long l, char *b) {
@@ -215,4 +228,35 @@ unsigned long charsToLong(char *c) {
 
   return atol(s);
   // return atol("2140");
+}
+
+#define SYNC_THRESHOLD_MS 100
+
+#define MAX_INTERVAL_LENGTH_MS 2140
+#define MIN_INTERVAL_LENGTH_MS 200
+
+void detectSync() {
+  if (intervalInRange(lastInterval) &&
+      intervalInRange(pulseInterval)) {
+    if (abs(lastInterval - pulseInterval) < SYNC_THRESHOLD_MS) {
+      inSync = true;
+    } else {
+      inSync = false;
+    }
+  }
+  debugSync(inSync);
+}
+
+boolean intervalInRange(unsigned long i) {
+  if ((MIN_INTERVAL_LENGTH_MS <= i) &&
+      (i <= MAX_INTERVAL_LENGTH_MS)) {
+    return true;
+  }
+  return false;
+}
+
+void debugSync(boolean b) {
+  if (b) {
+    Serial.print(" sync ");
+  }
 }
