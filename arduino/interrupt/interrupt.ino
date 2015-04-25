@@ -54,6 +54,10 @@ boolean showPulse = false;
 boolean standalone      = false;
 volatile boolean inSync = false;
 
+//3 minutes =  seconds or 3000 / 30 to get the number of loops in 3 minutes about
+#define MAX_SENSOR_WATCHDOG 6000
+long sensorWatchDogPats = MAX_SENSOR_WATCHDOG;
+
 // ---------------- Setup
 void setup() {
   // setup Input pin and Interrupt
@@ -155,6 +159,7 @@ void loop() {
 
 void checkSend() {
   if (gotPulse) {
+    sensorWatchDogPats = MAX_SENSOR_WATCHDOG;
     gotPulse = false;
     detectSync();
 
@@ -168,7 +173,21 @@ void checkSend() {
       debugCommsTx(false);
     }
 
+  } else {
+    sensorWatchDogPats--;
+    if (sensorWatchDogPats <= 0) {
+      resetSensor();
+      sensorWatchDogPats = MAX_SENSOR_WATCHDOG;
+    }
   }
+}
+
+void resetSensor() {
+  debugWatchdog(true);
+  digitalWrite(PinPowerSensor, LOW);
+  delay(500);
+  digitalWrite(PinPowerSensor, HIGH);
+  debugWatchdog(false);
 }
 
 void pulseISR() {
@@ -355,11 +374,15 @@ void debugSync(boolean on) {
 }
 
 void debugFeedback(boolean on) {
-  digitalWrite(PinLED, on ? HIGH : LOW);
+  //digitalWrite(PinLED, on ? HIGH : LOW);
 }
 
 void debugFeedbackTime(char c, unsigned long l) {
-  if (standalone) {
+  /*if (standalone) {
     sendMSG(myID, toID, c, l);
-  }
+  }*/
+}
+
+void debugWatchdog(boolean on) {
+  digitalWrite(PinLED, on ? HIGH : LOW);
 }
