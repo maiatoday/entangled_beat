@@ -160,7 +160,6 @@ void checkSend() {
 
     noFeedback();
 
-   if (goodData()) {
     if (standalone) {
       rememberInterval(pulseInterval);
     } else {
@@ -168,7 +167,6 @@ void checkSend() {
       sendMSG(myID, toID, 'P', pulseInterval);
       debugCommsTx(false);
     }
-  }
 
   }
 }
@@ -182,8 +180,8 @@ void pulseISR() {
   detectSync();
 }
 
-boolean goodData() {
-  if (abs(prevPulseInterval - pulseInterval) < 50) {
+boolean goodData(long prevIn, long newIn) {
+  if (abs(prevIn - newIn) < 50) {
     return true;
   }
   return false;
@@ -221,13 +219,19 @@ int liveCount = MAX_LIVE_COUNT;
 
 /** rememberInterval records the interval between beats.
  * It gets called when a packet with an interval  arrives
+ * or in standalone mode from the detected interval.
  */
 void rememberInterval(long interval) {
   showPulse    = true;
-  liveCount    = MAX_LIVE_COUNT;
+  if (goodData(lastInterval, interval)) {
+    liveCount = MAX_LIVE_COUNT;
+  }
   lastInterval = interval;
 
   if (intervalInRange(interval)) {
+    liveCount    = MAX_LIVE_COUNT;
+  // this pulls the brightness to full when a pulls comes but makes the beat jarring
+  // so comment out for now  brightness = MAX_BRIGHTNESS; //TODO maybe take this out
     workOutFadeDelay(interval);
   }
 }
